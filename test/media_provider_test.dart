@@ -1,5 +1,6 @@
 import 'package:anilist_data_viz/core/errors/failure.dart';
 import 'package:anilist_data_viz/domain/entities/media.dart';
+import 'package:anilist_data_viz/domain/entities/media_trend.dart';
 import 'package:anilist_data_viz/domain/entities/page_info.dart';
 import 'package:anilist_data_viz/domain/repositories/anilist_repository.dart';
 import 'package:anilist_data_viz/presentation/state/media_provider.dart';
@@ -28,6 +29,17 @@ class MockRepository implements AniListRepository {
     if (shouldFail) throw ServerFailure('Failed Detail');
     return Media(id: id, title: 'Title $id');
   }
+
+  @override
+  Future<({List<MediaTrend> trends, PageInfo pageInfo})> getMediaTrends({
+    required int mediaId,
+    required int page,
+    int perPage = 25,
+  }) async =>
+      (trends: <MediaTrend>[], pageInfo: PageInfo(currentPage: page, hasNextPage: false));
+
+  @override
+  Future<List<Media>> getMediaSnapshots(List<int> ids) async => [for (final id in ids) Media(id: id, title: 'Title $id')];
 }
 
 void main() {

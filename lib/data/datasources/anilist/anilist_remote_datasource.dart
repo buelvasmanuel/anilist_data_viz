@@ -6,6 +6,7 @@ import 'package:anilist_data_viz/core/constants/api_constants.dart';
 import 'package:anilist_data_viz/core/errors/exceptions.dart';
 import 'package:anilist_data_viz/data/datasources/anilist/queries/media_queries.dart';
 import 'package:anilist_data_viz/data/models/media_model.dart';
+import 'package:anilist_data_viz/data/models/media_trend_model.dart';
 import 'package:anilist_data_viz/data/models/page_info_model.dart';
 import 'package:anilist_data_viz/data/models/paginated_media_model.dart';
 
@@ -22,6 +23,16 @@ abstract class AniListRemoteDataSource {
   });
 
   Future<MediaModel> getMediaById(int id);
+
+  /// Una página de `Media.trends` (orden: fecha descendente).
+  Future<({List<MediaTrendModel> trends, PageInfoModel pageInfo})> getMediaTrends({
+    required int mediaId,
+    required int page,
+    required int perPage,
+  });
+
+  /// Contadores actuales (popularity, trending, favourites) de varias obras.
+  Future<List<MediaModel>> getMediaSnapshots(List<int> ids);
 }
 
 class AniListRemoteDataSourceImpl implements AniListRemoteDataSource {
@@ -118,5 +129,35 @@ class AniListRemoteDataSourceImpl implements AniListRemoteDataSource {
     final variables = {'id': id};
     final data = await _performQuery(MediaQueries.getMediaDetail, variables);
     return MediaModel.fromJson(data['Media']);
+  }
+
+  @override
+  Future<({List<MediaTrendModel> trends, PageInfoModel pageInfo})> getMediaTrends({
+    required int mediaId,
+    required int page,
+    required int perPage,
+  }) async {
+    final data = await _performQuery(
+      MediaQueries.getMediaTrends,
+      {'id': mediaId, 'page': page, 'perPage': perPage},
+    );
+    final connection = data['Media']?['trends'];
+    if (connection == null) {
+      return (trends: <MediaTrendModel>[], pageInfo: PageInfoModel(currentPage: page, hasNextPage: false));
+    }
+    return (
+      trends: (connection['nodes'] as List).map((e) => MediaTrendModel.fromJson(e)).toList(),
+      pageInfo: PageInfoModel.fromJson(connection['pageInfo']),
+    );
+  }
+
+  @override
+  Future<List<MediaModel>> getMediaSnapshots(List<int> ids) async {
+    if (ids.isEmpty) return const [];
+    final data = await _performQuery(
+      MediaQueries.getMediaSnapshots,
+      {'ids': ids, 'perPage': ids.length},
+    );
+    return (data['Page']['media'] as List).map((e) => MediaModel.fromJson(e)).toList();
   }
 }

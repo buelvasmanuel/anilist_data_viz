@@ -62,6 +62,8 @@ class MediaModel extends Media {
     super.popularity,
     super.trending,
     super.favourites,
+    super.popularAllTimeRank,
+    super.ratedAllTimeRank,
     super.genres = const [],
     super.tags = const [],
     super.studios = const [],
@@ -90,6 +92,14 @@ class MediaModel extends Media {
 
     final charactersEdges = json['characters']?['edges'] as List<dynamic>?;
     final charactersList = charactersEdges?.map((c) => CharacterModel.fromJson(c)).toList() ?? [];
+
+    int? allTimeRank(String type) {
+      final rankings = json['rankings'] as List<dynamic>? ?? const [];
+      for (final r in rankings) {
+        if (r['type'] == type && r['allTime'] == true) return r['rank'] as int?;
+      }
+      return null;
+    }
 
     final relationsEdges = json['relations']?['edges'] as List<dynamic>?;
     final relationsList = relationsEdges?.map((r) => MediaRelationModel.fromJson(r)).toList() ?? [];
@@ -121,6 +131,8 @@ class MediaModel extends Media {
       popularity: json['popularity'],
       trending: json['trending'],
       favourites: json['favourites'],
+      popularAllTimeRank: allTimeRank('POPULAR'),
+      ratedAllTimeRank: allTimeRank('RATED'),
       genres: (json['genres'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [],
       tags: tagsList,
       studios: studiosList,

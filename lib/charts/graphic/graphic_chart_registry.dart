@@ -42,7 +42,7 @@ class GraphicChartSpec {
   final GraphicDataOrigin? _origin;
   final GraphicDataOrigin Function(GraphicDataset)? _originOf;
 
-  /// Origen de datos. Para 41-44 depende de si existe Media.trends.
+  /// Origen de datos. Para 32-33 y 41-44 depende de si llegó Media.trends.
   GraphicDataOrigin originFor(GraphicDataset d) => _originOf?.call(d) ?? _origin!;
 }
 
@@ -122,10 +122,10 @@ final List<GraphicChartSpec> graphicChartRegistry = [
       construction: 'LineMark sin ejes ni padding', builder: g31SparklineLine),
 
   // ------------------------------ AVANZADOS 32-63 ------------------------------
-  GraphicChartSpec(number: 32, name: 'Candlestick', classification: _n, origin: _nd,
-      construction: 'CustomMark + CandlestickShape', builder: g32Candlestick),
-  GraphicChartSpec(number: 33, name: 'HLOC', classification: _c, origin: _nd,
-      construction: 'CustomMark + HlocShape (Shape propio)', builder: g33Hloc),
+  GraphicChartSpec(number: 32, name: 'Candlestick', classification: _n, originOf: _trendsOrigin,
+      construction: 'CustomMark + CandlestickShape (velas semanales de Media.trends)', builder: g32Candlestick),
+  GraphicChartSpec(number: 33, name: 'HLOC', classification: _c, originOf: _trendsOrigin,
+      construction: 'CustomMark + HlocShape (Shape propio, velas semanales de Media.trends)', builder: g33Hloc),
   GraphicChartSpec(number: 34, name: 'Box and Whisker', classification: _c, origin: _der,
       construction: 'Cuartiles externos + CustomMark + BoxPlotShape (Shape propio)', builder: g34BoxPlot),
   GraphicChartSpec(number: 35, name: 'Error Bars', classification: _c, origin: _der,
@@ -165,7 +165,7 @@ final List<GraphicChartSpec> graphicChartRegistry = [
   GraphicChartSpec(number: 51, name: 'Logarithmic Scale', classification: _v, origin: _dir,
       construction: 'log10 en Variable + LinearScale(ticks, formatter)', builder: g51LogScale),
   GraphicChartSpec(number: 52, name: 'Infinite Scrolling / Lazy Loading', classification: _c, origin: _dir,
-      construction: 'EventUpdater propio + carga de páginas + nueva lista', builder: (d) => G52InfiniteScroll(d)),
+      construction: 'Paginación real AniList (LazyLoadingHost) + IntervalMark', builder: (d) => G52InfiniteScroll(d)),
   GraphicChartSpec(number: 53, name: 'Shaded Doughnut', classification: _v, origin: _der,
       construction: 'Doughnut + GradientEncode(SweepGradient) + ElevationEncode', builder: g53ShadedDoughnut),
   GraphicChartSpec(number: 54, name: 'Semi-Doughnut Progress', classification: _v, origin: _dir,
@@ -190,8 +190,8 @@ final List<GraphicChartSpec> graphicChartRegistry = [
   GraphicChartSpec(number: 62, name: 'Inverted / Opposed Axis', classification: _v, origin: _dir,
       construction: 'RectCoord(verticalRange: [1, 0]) + AxisGuide(position: 1, flip)',
       builder: g62InvertedOpposedAxis),
-  GraphicChartSpec(number: 63, name: 'Real-time Streaming', classification: _n, origin: _der,
-      construction: 'Chart.changeDataStream + ChangeDataEvent + Mark.transition',
+  GraphicChartSpec(number: 63, name: 'Real-time Streaming', classification: _n, origin: _dir,
+      construction: 'Sondeo periódico AniList → Chart.changeDataStream + ChangeDataEvent',
       builder: (d) => G63RealTimeStreaming(d)),
 ];
 

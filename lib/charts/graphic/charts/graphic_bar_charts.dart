@@ -55,8 +55,10 @@ Widget g03HorizontalBar(GraphicDataset d) => guard(
 Widget g14Pyramid(GraphicDataset d) => guard(
       d.countByFormat.length >= 2,
       () => Chart(
-        data: d.countByFormat, // ya viene ordenado de mayor a menor
-        variables: categoryVars(),
+        // Pirámide: la categoría menor arriba (countByFormat viene de mayor a menor).
+        data: d.countByFormat.reversed.toList(),
+        // SymmetricModifier centra respecto al 0 de la escala: la escala debe ser simétrica.
+        variables: categoryVars(yScale: _symmetricScale(d.countByFormat)),
         marks: [
           IntervalMark(
             position: Varset('x') * Varset('y'),
@@ -75,7 +77,8 @@ Widget g15Funnel(GraphicDataset d) => guard(
       d.countByStatus.length >= 2,
       () => Chart(
         data: d.countByStatus,
-        variables: categoryVars(),
+        // SymmetricModifier centra respecto al 0 de la escala: la escala debe ser simétrica.
+        variables: categoryVars(yScale: _symmetricScale(d.countByStatus)),
         marks: [
           IntervalMark(
             position: Varset('x') * Varset('y'),
@@ -260,4 +263,10 @@ Widget g30DivergingBar(GraphicDataset d) {
       axes: [Defaults.verticalAxis, Defaults.horizontalAxis],
     );
   });
+}
+
+/// Escala centrada en 0 para FunnelShape + SymmetricModifier.
+LinearScale _symmetricScale(List<GCategory> items) {
+  final max = items.isEmpty ? 1 : items.map((c) => c.value).reduce((a, b) => a > b ? a : b);
+  return LinearScale(min: -max / 2, max: max / 2);
 }

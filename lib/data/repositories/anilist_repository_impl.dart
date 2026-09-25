@@ -2,6 +2,7 @@ import 'package:anilist_data_viz/core/errors/exceptions.dart';
 import 'package:anilist_data_viz/core/errors/failure.dart';
 import 'package:anilist_data_viz/data/datasources/anilist/anilist_remote_datasource.dart';
 import 'package:anilist_data_viz/domain/entities/media.dart';
+import 'package:anilist_data_viz/domain/entities/media_trend.dart';
 import 'package:anilist_data_viz/domain/entities/page_info.dart';
 import 'package:anilist_data_viz/domain/repositories/anilist_repository.dart';
 
@@ -47,9 +48,27 @@ class AniListRepositoryImpl implements AniListRepository {
   }
 
   @override
-  Future<Media> getMediaById(int id) async {
+  Future<Media> getMediaById(int id) => _guard(() => remoteDataSource.getMediaById(id));
+
+  @override
+  Future<({List<MediaTrend> trends, PageInfo pageInfo})> getMediaTrends({
+    required int mediaId,
+    required int page,
+    int perPage = 25,
+  }) =>
+      _guard(() async {
+        final r = await remoteDataSource.getMediaTrends(mediaId: mediaId, page: page, perPage: perPage);
+        return (trends: <MediaTrend>[...r.trends], pageInfo: r.pageInfo as PageInfo);
+      });
+
+  @override
+  Future<List<Media>> getMediaSnapshots(List<int> ids) =>
+      _guard(() async => <Media>[...await remoteDataSource.getMediaSnapshots(ids)]);
+
+  /// Traduce las excepciones de la capa de datos a [Failure].
+  Future<T> _guard<T>(Future<T> Function() call) async {
     try {
-      return await remoteDataSource.getMediaById(id);
+      return await call();
     } on NetworkException catch (e) {
       throw NetworkFailure(e.message);
     } on ServerException catch (e) {

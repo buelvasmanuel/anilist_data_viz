@@ -45,6 +45,7 @@ class GraphicDataset {
     required this.bollingerPoints,
     required this.rsiPoints,
     required this.macdPoints,
+    required this.trendOhlc,
   });
 
   /// Construye todos los datasets. [trends] es opcional: si el DataSource no
@@ -179,12 +180,13 @@ class GraphicDataset {
       ..sort((a, b) => a.rank!.compareTo(b.rank!));
 
     // --- Serie temporal Media.trends (REAL, NO financiera) ---
+    // `popularity` de trends es un acumulado (usuarios con la obra en su
+    // lista) y casi nunca baja. La serie base de #32, #33 y #41-#44 es su
+    // variación neta por día: (pop[i] − pop[i−1]) / días entre ambos nodos.
     final sortedTrends = [...trends]..sort((a, b) => a.date.compareTo(b.date));
-    final trendLabels = [
-      for (final p in sortedTrends)
-        '${p.date.year}-${p.date.month.toString().padLeft(2, '0')}-${p.date.day.toString().padLeft(2, '0')}',
-    ];
-    final trendValues = [for (final p in sortedTrends) p.popularity];
+    final gains = GraphicTransformations.dailyGains(sortedTrends);
+    final trendLabels = [for (final g in gains) g.label];
+    final trendValues = [for (final g in gains) g.value];
     final smaValues = GraphicTransformations.sma(trendValues, smaPeriod);
     final rsiValues = GraphicTransformations.rsi(trendValues);
 
@@ -219,7 +221,7 @@ class GraphicDataset {
       trendSma: [
         for (var i = 0; i < trendValues.length; i++)
           if (smaValues[i] != null) ...[
-            GSeriesPoint(trendLabels[i], trendValues[i], 'Popularidad'),
+            GSeriesPoint(trendLabels[i], trendValues[i], 'Variación diaria'),
             GSeriesPoint(trendLabels[i], smaValues[i]!, 'SMA $smaPeriod'),
           ],
       ],
@@ -229,6 +231,7 @@ class GraphicDataset {
           if (rsiValues[i] != null) GCategory(trendLabels[i], rsiValues[i]!),
       ],
       macdPoints: GraphicTransformations.macd(trendLabels, trendValues),
+      trendOhlc: GraphicTransformations.ohlc(trendLabels, trendValues),
     );
   }
 
@@ -263,13 +266,19 @@ class GraphicDataset {
   final List<GCategory> winLossByYear;
   final double globalMeanScore;
 
-  // DERIVADO de Media.trends (vacío si no se consulta → NO DISPONIBLE)
+  // DERIVADO de Media.trends: variación neta diaria de popularidad.
+  // Vacío si no llegaron trends (fallo de red).
   final List<String> trendLabels;
   final List<num> trendValues;
   final List<GSeriesPoint> trendSma;
   final List<GBollingerPoint> bollingerPoints;
   final List<GCategory> rsiPoints;
   final List<GMacdPoint> macdPoints;
+
+  /// Velas semanales (7 días) sobre la variación diaria de popularidad.
+  /// Adaptación NO financiera: open = primer día, high = máximo,
+  /// low = mínimo, close = último día de la semana.
+  final List<GOhlc> trendOhlc;
 
   bool get hasTrends => trendValues.length >= 30;
 }

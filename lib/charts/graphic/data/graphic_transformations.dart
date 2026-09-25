@@ -162,6 +162,50 @@ class GraphicTransformations {
   }
 
   // ---------------------------------------------------------------------
+  // Media.trends → serie diaria
+  // ---------------------------------------------------------------------
+
+  /// Variación neta diaria de popularidad a partir de nodos ordenados por
+  /// fecha. Si faltan días entre dos nodos, la variación se reparte entre
+  /// ellos (promedio por día). Etiqueta = fecha del segundo nodo (AAAA-MM-DD).
+  static List<GCategory> dailyGains(List<GTrendPoint> sorted) {
+    final out = <GCategory>[];
+    for (var i = 1; i < sorted.length; i++) {
+      final days = sorted[i].date.difference(sorted[i - 1].date).inHours / 24;
+      if (days <= 0) continue;
+      final gain = (sorted[i].popularity - sorted[i - 1].popularity) / days;
+      final d = sorted[i].date;
+      out.add(GCategory(
+        '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}',
+        gain,
+      ));
+    }
+    return out;
+  }
+
+  // ---------------------------------------------------------------------
+  // #32 / #33 OHLC adaptado
+  // ---------------------------------------------------------------------
+
+  /// Agrupa la serie en ventanas completas de [period] puntos:
+  /// open = primero, high = máximo, low = mínimo, close = último.
+  /// Etiqueta = primera fecha de la ventana.
+  static List<GOhlc> ohlc(List<String> labels, List<num> values, {int period = 7}) {
+    final out = <GOhlc>[];
+    for (var start = 0; start + period <= values.length; start += period) {
+      final w = values.sublist(start, start + period);
+      out.add(GOhlc(
+        labels[start],
+        w.first,
+        w.fold<num>(w.first, (a, b) => a > b ? a : b),
+        w.fold<num>(w.first, (a, b) => a < b ? a : b),
+        w.last,
+      ));
+    }
+    return out;
+  }
+
+  // ---------------------------------------------------------------------
   // #41 SMA
   // ---------------------------------------------------------------------
 

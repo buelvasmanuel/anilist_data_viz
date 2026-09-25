@@ -1,6 +1,7 @@
 import 'package:anilist_data_viz/data/datasources/anilist/anilist_remote_datasource.dart';
 import 'package:anilist_data_viz/data/repositories/anilist_repository_impl.dart';
 import 'package:anilist_data_viz/presentation/screens/home_screen.dart';
+import 'package:anilist_data_viz/presentation/state/anilist_live_provider.dart';
 import 'package:anilist_data_viz/presentation/state/charts_dataset_provider.dart';
 import 'package:anilist_data_viz/presentation/state/media_provider.dart';
 import 'package:flutter/material.dart';
@@ -17,6 +18,7 @@ void main() {
       providers: [
         ChangeNotifierProvider(create: (_) => MediaProvider(repository: repository)),
         ChangeNotifierProvider(create: (_) => ChartsDatasetProvider(repository: repository)),
+        ChangeNotifierProvider(create: (_) => AniListLiveProvider(repository: repository)),
       ],
       child: const MyApp(),
     ),

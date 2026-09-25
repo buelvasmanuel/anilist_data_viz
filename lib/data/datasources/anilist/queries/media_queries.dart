@@ -36,6 +36,11 @@ class MediaQueries {
       popularity
       trending
       favourites
+      rankings {
+        rank
+        type
+        allTime
+      }
       genres
       tags {
         name
@@ -110,6 +115,48 @@ class MediaQueries {
           sort: POPULARITY_DESC
         ) {
           ...MediaFields
+        }
+      }
+    }
+  ''';
+
+  /// Serie diaria `Media.trends`. AniList devuelve como máximo 25 nodos por
+  /// página en este campo.
+  static const String getMediaTrends = r'''
+    query MediaTrends($id: Int, $page: Int, $perPage: Int) {
+      Media(id: $id) {
+        trends(sort: DATE_DESC, page: $page, perPage: $perPage) {
+          pageInfo {
+            currentPage
+            hasNextPage
+            lastPage
+            perPage
+            total
+          }
+          nodes {
+            mediaId
+            date
+            popularity
+            trending
+          }
+        }
+      }
+    }
+  ''';
+
+  /// Consulta ligera para el sondeo periódico (#63): solo contadores vivos.
+  static const String getMediaSnapshots = r'''
+    query MediaSnapshots($ids: [Int], $perPage: Int) {
+      Page(page: 1, perPage: $perPage) {
+        media(id_in: $ids) {
+          id
+          title {
+            userPreferred
+            romaji
+          }
+          popularity
+          trending
+          favourites
         }
       }
     }

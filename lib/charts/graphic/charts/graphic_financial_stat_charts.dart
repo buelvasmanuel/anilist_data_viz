@@ -1,10 +1,11 @@
 // Financieros, estadísticos e indicadores: #32, #33, #34, #35, #41, #42, #43, #44.
 //
 // Reglas de datos:
-// - #32 y #33: AniList NO tiene OHLC → datos SINTÉTICOS etiquetados.
+// - #32 y #33: velas ADAPTADAS sobre Media.trends (variación diaria de
+//   popularidad agrupada por semanas). No son cotizaciones financieras.
 // - #34 y #35: DERIVADOS de averageScore (cuartiles, media ± σ).
 // - #41-#44: DERIVADOS de Media.trends (serie temporal REAL, NO financiera).
-//   Si el DataSource no consulta trends → NO DISPONIBLE (no se inventa nada).
+//   Si la petición de trends falla, se informa el problema técnico.
 
 import 'dart:async';
 
@@ -17,25 +18,65 @@ import '../data/graphic_view_models.dart';
 import '../shapes/graphic_custom_shapes.dart';
 import 'graphic_chart_helpers.dart';
 
-const _noTrends =
-    'NO DISPONIBLE: el DataSource no consulta Media.trends.\n'
-    'AniList no ofrece otra serie temporal adecuada para este indicador.';
-
-const _trendsNotice =
-    'Indicador calculado sobre Media.trends (popularidad diaria de AniList). No es un dato financiero.';
+const _noTrends = 'No se pudo cargar Media.trends desde AniList. Cambia Anime/Manga para reintentar.';
 
 
-/// #32 Candlestick — NATIVO (capacidad gráfica) — NO DISPONIBLE en AniList.
-/// Orden de posición de CandlestickShape: [start, end, max, min].
-Widget g32Candlestick(GraphicDataset d) {
-  return const GraphicEmptyState('NO DISPONIBLE: AniList no proporciona datos financieros OHLC.');
-}
+/// #32 Candlestick — ADAPTACIÓN — velas semanales sobre la variación diaria
+/// de popularidad (Media.trends). CandlestickShape ordena los cuatro valores.
+Widget g32Candlestick(GraphicDataset d) => guard(
+      d.trendOhlc.length >= 2,
+      () {
+        final s = sharedScale([for (final c in d.trendOhlc) ...[c.low, c.high]], padding: 5);
+        return Chart<GOhlc>(
+          data: d.trendOhlc,
+          variables: {
+            'week': Variable<GOhlc, String>(accessor: (c) => c.label.substring(5)),
+            'open': Variable<GOhlc, num>(accessor: (c) => c.open, scale: s),
+            'close': Variable<GOhlc, num>(accessor: (c) => c.close, scale: s),
+            'high': Variable<GOhlc, num>(accessor: (c) => c.high, scale: s),
+            'low': Variable<GOhlc, num>(accessor: (c) => c.low, scale: s),
+          },
+          marks: [
+            CustomMark(
+              shape: ShapeEncode(value: CandlestickShape(hollow: false)),
+              position: Varset('week') * (Varset('open') + Varset('close') + Varset('high') + Varset('low')),
+              color: ColorEncode(encoder: (t) => (t['close'] as num) >= (t['open'] as num) ? const Color(0xFF66BB6A) : const Color(0xFFEF5350)),
+            ),
+          ],
+          axes: standardAxes,
+        );
+      },
+      message: _noTrends,
+    );
 
-/// #33 HLOC — COMPOSICIÓN (Shape propio) — NO DISPONIBLE en AniList.
+/// #33 HLOC — COMPOSICIÓN (Shape propio) — misma agrupación semanal que #32.
 /// Orden de posición de HlocShape: [open, high, low, close].
-Widget g33Hloc(GraphicDataset d) {
-  return const GraphicEmptyState('NO DISPONIBLE: AniList no proporciona datos financieros OHLC.');
-}
+Widget g33Hloc(GraphicDataset d) => guard(
+      d.trendOhlc.length >= 2,
+      () {
+        final s = sharedScale([for (final c in d.trendOhlc) ...[c.low, c.high]], padding: 5);
+        return Chart<GOhlc>(
+          data: d.trendOhlc,
+          variables: {
+            'week': Variable<GOhlc, String>(accessor: (c) => c.label.substring(5)),
+            'open': Variable<GOhlc, num>(accessor: (c) => c.open, scale: s),
+            'high': Variable<GOhlc, num>(accessor: (c) => c.high, scale: s),
+            'low': Variable<GOhlc, num>(accessor: (c) => c.low, scale: s),
+            'close': Variable<GOhlc, num>(accessor: (c) => c.close, scale: s),
+          },
+          marks: [
+            CustomMark(
+              shape: ShapeEncode(value: HlocShape(strokeWidth: 2)),
+              position: Varset('week') * (Varset('open') + Varset('high') + Varset('low') + Varset('close')),
+              size: SizeEncode(value: 14),
+              color: ColorEncode(encoder: (t) => (t['close'] as num) >= (t['open'] as num) ? const Color(0xFF66BB6A) : const Color(0xFFEF5350)),
+            ),
+          ],
+          axes: standardAxes,
+        );
+      },
+      message: _noTrends,
+    );
 
 /// #34 Box and Whisker — COMPOSICIÓN — DERIVADO (cuartiles de score por formato).
 Widget g34BoxPlot(GraphicDataset d) => guard(
@@ -83,7 +124,8 @@ Widget g35ErrorBars(GraphicDataset d) => guard(
             CustomMark(
               shape: ShapeEncode(value: ErrorBarShape()),
               position: Varset('genre') * (Varset('low') + Varset('mean') + Varset('high')),
-              color: ColorEncode(value: Colors.black87),
+              // Color visible en tema claro y oscuro (negro no se veía en el tema oscuro).
+              color: ColorEncode(value: const Color(0xFF42A5F5)),
             ),
           ],
           axes: standardAxes,
@@ -95,7 +137,6 @@ Widget g35ErrorBars(GraphicDataset d) => guard(
 Widget g41Sma(GraphicDataset d) {
   if (!d.hasTrends) return const GraphicEmptyState(_noTrends);
   return Column(children: [
-    const GraphicNotice(_trendsNotice, color: Color(0xFF1565C0)),
     Expanded(
       child: Chart<GSeriesPoint>(
         data: d.trendSma,
@@ -125,7 +166,6 @@ Widget g42Bollinger(GraphicDataset d) {
   if (!d.hasTrends || pts.length < 5) return const GraphicEmptyState(_noTrends);
   final s = sharedScale([for (final p in pts) ...[p.lower, p.upper, p.value]]);
   return Column(children: [
-    const GraphicNotice(_trendsNotice, color: Color(0xFF1565C0)),
     Expanded(
       child: Chart<GBollingerPoint>(
         data: pts,
@@ -142,7 +182,7 @@ Widget g42Bollinger(GraphicDataset d) {
             color: ColorEncode(value: Colors.blue.withAlpha(40)),
           ),
           LineMark(position: Varset('x') * Varset('mid'), color: ColorEncode(value: Colors.blue)),
-          LineMark(position: Varset('x') * Varset('value'), color: ColorEncode(value: Colors.black87)),
+          LineMark(position: Varset('x') * Varset('value'), color: ColorEncode(value: const Color(0xFFFFB74D))),
         ],
         axes: standardAxes,
       ),
@@ -181,8 +221,7 @@ class _G43RsiState extends State<G43Rsi> {
     ];
     final zoom = RectCoord(horizontalRangeUpdater: Defaults.horizontalRangeEvent);
     return Column(children: [
-      const GraphicNotice(_trendsNotice, color: Color(0xFF1565C0)),
-      Expanded(
+        Expanded(
         flex: 2,
         child: Chart(
           data: main,
@@ -220,7 +259,6 @@ Widget g44Macd(GraphicDataset d) {
   if (!d.hasTrends || pts.length < 5) return const GraphicEmptyState(_noTrends);
   final s = sharedScale([for (final p in pts) ...[p.macd, p.signal, p.histogram]]);
   return Column(children: [
-    const GraphicNotice(_trendsNotice, color: Color(0xFF1565C0)),
     Expanded(
       child: Chart<GMacdPoint>(
         data: pts,

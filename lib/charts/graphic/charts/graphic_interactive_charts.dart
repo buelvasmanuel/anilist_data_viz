@@ -1,9 +1,13 @@
 // Interactivas y dinámicas: #38, #39, #40, #47, #52, #55, #60, #61, #63.
+// #52 y #63 hacen peticiones reales a AniList (paginación y sondeo).
 
 import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:graphic/graphic.dart';
+
+import 'package:anilist_data_viz/charts/common/live_case_hosts.dart';
+import 'package:anilist_data_viz/presentation/state/anilist_live_provider.dart';
 
 import '../common/graphic_common.dart';
 import '../data/graphic_dataset.dart';
@@ -171,87 +175,22 @@ Widget g47WidgetAnnotations(GraphicDataset d) {
 // #52 Infinite Scrolling / Lazy Loading — COMPOSICIÓN — DIRECTO
 // ---------------------------------------------------------------------------
 
-/// Graphic no tiene "load more". Se compone:
-///   EventUpdater propio (sobre Defaults.horizontalRangeEvent) detecta el borde
-///   → callback → se añade una página → nueva lista → el Chart se reevalúa.
-///
-/// [loadPage] debería venir del Provider (paginación Page/pageInfo de AniList).
-/// Si es null, se pagina LOCALMENTE sobre los títulos ya cargados.
-class G52InfiniteScroll extends StatefulWidget {
-  const G52InfiniteScroll(this.data, {super.key, this.loadPage, this.pageSize = 10});
+/// Graphic no tiene "load more". Se compone con [LazyLoadingHost]: al llegar
+/// al final del scroll se pide la página siguiente a AniList
+/// (`AniListLiveProvider.loadNextPage`) y el Chart recibe la lista ampliada.
+class G52InfiniteScroll extends StatelessWidget {
+  const G52InfiniteScroll(this.data, {super.key});
 
   final GraphicDataset data;
-  final Future<List<GDatedValue>> Function(int page)? loadPage;
-  final int pageSize;
 
   @override
-  State<G52InfiniteScroll> createState() => _G52InfiniteScrollState();
-}
-
-class _G52InfiniteScrollState extends State<G52InfiniteScroll> {
-  late List<GDatedValue> _items;
-  int _page = 1;
-  bool _loading = false;
-  bool _exhausted = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _items = widget.data.datedTitles.take(widget.pageSize * 2).toList();
-  }
-
-  Future<void> _loadMore() async {
-    if (_loading || _exhausted) return;
-    setState(() => _loading = true);
-    final next = widget.loadPage != null
-        ? await widget.loadPage!(_page + 1)
-        : widget.data.datedTitles.skip(_items.length).take(widget.pageSize).toList();
-    if (!mounted) return;
-    setState(() {
-      _loading = false;
-      _page++;
-      if (next.isEmpty) {
-        _exhausted = true;
-      } else {
-        _items = [..._items, ...next]; // NUEVA instancia → changeData
-      }
-    });
-  }
-
-  /// Delegamos en el updater oficial y solo observamos el resultado.
-  /// El rango es un ratio respecto a la región: `last <= 1` significa que el
-  /// borde derecho del contenido ya es visible. VERIFICAR con debugPrint.
-  List<double> _rangeUpdater(List<double> initial, List<double> previous, Event event) {
-    final next = Defaults.horizontalRangeEvent(initial, previous, event);
-    if (next.last <= 1.02) {
-      scheduleMicrotask(_loadMore);
-    }
-    return next;
-  }
-
-  @override
-  Widget build(BuildContext context) => guard(
-        _items.length >= 2,
-        () => Stack(children: [
-          Chart(
-            data: _items,
-            variables: _datedVars(),
-            marks: [PointMark(position: Varset('date') * Varset('value'), size: SizeEncode(value: 5))],
-            coord: RectCoord(horizontalRange: [0, 2], horizontalRangeUpdater: _rangeUpdater),
-            axes: standardAxes,
-          ),
-          Positioned(
-            right: 8,
-            top: 4,
-            child: Text(
-              _loading
-                  ? 'Cargando…'
-                  : '${_items.length} títulos${_exhausted ? ' (fin)' : ''}'
-                      '${widget.loadPage == null ? ' · paginación local' : ''}',
-              style: const TextStyle(fontSize: 10),
-            ),
-          ),
-        ]),
+  Widget build(BuildContext context) => LazyLoadingHost(
+        chartBuilder: (items) => Chart<GCategory>(
+          data: [for (final m in items) GCategory('${m.id}', m.popularity ?? 0)],
+          variables: categoryVars(),
+          marks: [IntervalMark(color: ColorEncode(value: const Color(0xFF26C6DA)))],
+          axes: [Defaults.verticalAxis],
+        ),
       );
 }
 
@@ -516,92 +455,63 @@ class _G61StaggeredAnimationState extends State<G61StaggeredAnimation> {
 }
 
 // ---------------------------------------------------------------------------
-// #63 Real-time Streaming — NATIVO — DERIVADO
+// #63 Real-time Streaming — NATIVO — DIRECTO
 // ---------------------------------------------------------------------------
 
 /// Mecanismo nativo de Graphic: `Chart.changeDataStream` + `ChangeDataEvent`.
-/// Los datos nuevos entran SIN setState ni reconstrucción del widget.
-///
-/// [updates] debe venir del Provider (polling a AniList respetando el rate
-/// limit; AniList no tiene push). Si es null, se REPRODUCE localmente la serie
-/// ya cargada (Media.trends si existe, si no títulos por año) y se indica en la UI.
-class G63RealTimeStreaming extends StatefulWidget {
-  const G63RealTimeStreaming(this.data, {super.key, this.updates, this.window = 12});
+/// Las lecturas llegan del sondeo periódico REAL a AniList
+/// ([LiveStreamingHost] → `AniListLiveProvider`); cada lectura nueva se
+/// empuja al Chart sin reconstruir el widget.
+class G63RealTimeStreaming extends StatelessWidget {
+  const G63RealTimeStreaming(this.data, {super.key});
 
   final GraphicDataset data;
-  final Stream<List<GCategory>>? updates;
-  final int window;
 
   @override
-  State<G63RealTimeStreaming> createState() => _G63RealTimeStreamingState();
+  Widget build(BuildContext context) => LiveStreamingHost(chartBuilder: (samples) => _G63Live(samples: samples));
 }
 
-class _G63RealTimeStreamingState extends State<G63RealTimeStreaming> {
-  final _changeData = StreamController<ChangeDataEvent<GCategory>>.broadcast();
-  StreamSubscription<List<GCategory>>? _sub;
-  Timer? _replay;
-  late final List<GCategory> _source;
-  late final List<GCategory> _initial;
-  int _cursor = 0;
+class _G63Live extends StatefulWidget {
+  const _G63Live({required this.samples});
+  final List<LiveSample> samples;
 
   @override
-  void initState() {
-    super.initState();
-    final d = widget.data;
-    _source = d.hasTrends
-        ? [for (var i = 0; i < d.trendValues.length; i++) GCategory(d.trendLabels[i], d.trendValues[i])]
-        : d.countByYear;
-    _cursor = _source.length < widget.window ? _source.length : widget.window;
-    _initial = _source.take(_cursor).toList();
+  State<_G63Live> createState() => _G63LiveState();
+}
 
-    if (widget.updates != null) {
-      _sub = widget.updates!.listen((w) => _changeData.add(ChangeDataEvent<GCategory>(w)));
-    } else if (_source.length > widget.window) {
-      _replay = Timer.periodic(const Duration(seconds: 1), (_) {
-        _cursor = _cursor >= _source.length ? widget.window : _cursor + 1;
-        final window = _source.sublist(_cursor - widget.window, _cursor);
-        _changeData.add(ChangeDataEvent<GCategory>(window));
-      });
+class _G63LiveState extends State<_G63Live> {
+  final _changeData = StreamController<ChangeDataEvent<GCategory>>.broadcast();
+  late final List<GCategory> _initial = _points(widget.samples);
+
+  static List<GCategory> _points(List<LiveSample> s) => [for (final x in s) GCategory(liveLabel(x), x.totalPopularity)];
+
+  @override
+  void didUpdateWidget(covariant _G63Live oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.samples.length != oldWidget.samples.length ||
+        (widget.samples.isNotEmpty && widget.samples.last.time != oldWidget.samples.last.time)) {
+      _changeData.add(ChangeDataEvent<GCategory>(_points(widget.samples)));
     }
   }
 
   @override
   void dispose() {
-    _replay?.cancel();
-    _sub?.cancel();
     _changeData.close();
     super.dispose();
   }
 
   @override
-  Widget build(BuildContext context) => guard(_initial.length >= 2, () {
-        return Column(children: [
-          if (widget.updates == null)
-            const GraphicNotice(
-              'Reproducción local de datos AniList ya cargados (AniList no tiene push). '
-              'En producción: Stream del Provider con polling.',
-              color: Color(0xFF1565C0),
-            ),
-          Expanded(
-            child: Chart<GCategory>(
-              data: _initial,
-              changeDataStream: _changeData,
-              variables: {
-                'x': Variable<GCategory, String>(accessor: (c) => c.label, scale: OrdinalScale(tickCount: 4)),
-                'y': Variable<GCategory, num>(
-                  accessor: (c) => c.value,
-                  scale: sharedScale([for (final c in _source) c.value]),
-                ),
-              },
-              marks: [
-                LineMark(
-                  position: Varset('x') * Varset('y'),
-                  transition: Transition(duration: const Duration(milliseconds: 500)),
-                ),
-              ],
-              axes: standardAxes,
-            ),
-          ),
-        ]);
-      });
+  Widget build(BuildContext context) => Chart<GCategory>(
+        data: _initial,
+        changeDataStream: _changeData,
+        variables: {
+          'x': Variable<GCategory, String>(accessor: (c) => c.label, scale: OrdinalScale(tickCount: 4)),
+          'y': Variable<GCategory, num>(accessor: (c) => c.value, scale: LinearScale(tickCount: 4)),
+        },
+        marks: [
+          LineMark(position: Varset('x') * Varset('y'), transition: Transition(duration: const Duration(milliseconds: 500))),
+          PointMark(position: Varset('x') * Varset('y'), size: SizeEncode(value: 6)),
+        ],
+        axes: standardAxes,
+      );
 }

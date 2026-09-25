@@ -25,29 +25,33 @@ Chart Models / Registry
 ↓
 Librerías de gráficos
 
-## Matriz 63x4
+## Los 63 casos de evaluación
 
-Existe una matriz maestra central (`master_chart_registry.dart` / `matrix.txt`) que define 63 casos requeridos y mapea cada uno a las 4 librerías mencionadas, totalizando 252 implementaciones evaluadas.
+El proyecto compara las cuatro librerías sobre **los mismos 63 casos maestros** (Línea Simple, Columna Vertical, …, Real-time Streaming). La app muestra **63 visualizaciones reales por librería: 252 en total**.
 
-## Estados
+- **Matriz 63×4:** `lib/charts/models/master_chart_registry.dart` guarda, para cada caso y librería, la **capacidad** de la librería (NATIVO, VARIANTE, COMPOSICIÓN, NO SOPORTADO) y el **estado** en el proyecto (hoy 248 FUNCIONAL y 4 PARCIAL).
+- **Implementación:** cada librería tiene un mapa de 63 `CaseImpl` (`flChartCases`, `syncfusionCases`, `dChartCases`, `graphicCases`) con la estrategia usada (NATIVO, VARIANTE, COMPOSICIÓN o ADAPTACIÓN), el origen de datos, la API y el builder. Una ADAPTACIÓN no significa que la librería tenga ese gráfico: es una representación equivalente construida por el proyecto y se explica en la tarjeta.
+- **Galerías:** las cuatro comparten `MasterCaseGallery`. Filtros por implementación (Todas, Nativo, Variante, Composición, Adaptación) y por categoría (Básicos, Apilados / Rangos, Interacción, Escalas, Estadísticos, Especiales). Cada tarjeta muestra número, nombre maestro, capacidad, implementación, estado, origen de datos y el gráfico.
+- **Verificación:** `test/case_builders_test.dart` monta los 252 builders y exige un gráfico real de la librería correspondiente en cada uno.
 
-Las clasificaciones de implementación para cada caso son:
-- **Nativo**: Soportado inherentemente por la librería.
-- **Variante**: Requiere ajuste en parámetros o configuración no estándar.
-- **Composición**: Construido superponiendo widgets o gráficas múltiples.
-- **No soportado**: La librería no cuenta con capacidad para renderizarlo.
+### Documentación
 
-Y los estados funcionales son:
-- **Funcional**: Operativo con datos reales.
-- **Parcial**: Presenta alguna limitación estética o funcional.
-- **Demo**: *No utilizado en la versión final*.
-- **Roto**: Falla en ejecución.
-- **No Disponible**: Carece de datos de respaldo desde la API de AniList (ej. históricos de bolsa o valores OHLC).
-- **No Verificado**: No fue probado o integrado activamente tras determinarse soporte.
+- [FL Chart](docs/FL_CHART.md)
+- [Syncfusion Flutter Charts](docs/SYNCFUSION.md)
+- [d_chart](docs/DCHART.md)
+- [Graphic](docs/GRAPHIC.md)
+- [Reporte de integración 63×4](docs/integration_report.md)
+
+Los archivos `docs/*_INVESTIGACION.md` y `docs/*_IMPLEMENTATION.md` son historial de trabajo: usan una lista provisional anterior y no son la matriz vigente.
 
 ## Datos
 
-Los gráficos utilizan datos reales provenientes de AniList. Aquellos casos estadísticos o financieros complejos que requieren información no provista por AniList (como velas japonesas, MACD, RSI, etc.) se mantienen como **NO DISPONIBLES**. Se prohíbe explícitamente el uso de datos sintéticos o generados aleatoriamente (mocks) para forzar su funcionamiento visual.
+Todo sale de AniList, sin `Random` ni listas fijas:
+
+- **Muestra:** las 200 obras más populares del tipo elegido (4 páginas × 50, `sort: POPULARITY_DESC`). No representa a toda la base de AniList.
+- **`Media.trends`:** unos 100 días de la obra más popular. Como su `popularity` es un acumulado, los casos #32 Candlestick, #33 HLOC, #41 SMA, #42 Bollinger, #43 RSI y #44 MACD usan su **variación neta diaria**. Son adaptaciones sobre popularidad, **no** datos financieros; AniList no tiene precios ni OHLC.
+- **#52:** paginación real contra AniList al llegar al final del scroll.
+- **#63:** actualización periódica real desde AniList (polling cada 30 s; AniList no ofrece push).
 
 ## Ejecución
 

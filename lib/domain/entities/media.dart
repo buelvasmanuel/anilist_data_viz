@@ -54,6 +54,12 @@ class Media {
   final int? popularity;
   final int? trending;
   final int? favourites;
+
+  /// Puesto en el ranking "most popular all time" de AniList (`rankings`).
+  final int? popularAllTimeRank;
+
+  /// Puesto en el ranking "highest rated all time" de AniList (`rankings`).
+  final int? ratedAllTimeRank;
   final List<String> genres;
   final List<Tag> tags;
   final List<Studio> studios;
@@ -91,6 +97,8 @@ class Media {
     this.popularity,
     this.trending,
     this.favourites,
+    this.popularAllTimeRank,
+    this.ratedAllTimeRank,
     this.genres = const [],
     this.tags = const [],
     this.studios = const [],

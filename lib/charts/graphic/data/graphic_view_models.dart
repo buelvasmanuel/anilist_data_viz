@@ -118,8 +118,8 @@ class GRegressionPoint {
   final num fitted;
 }
 
-/// Vela OHLC. SOLO se usa con datos sintéticos de demostración:
-/// AniList NO proporciona OHLC.
+/// Vela OHLC adaptada: se construye agrupando la variación diaria de
+/// popularidad de `Media.trends`. AniList NO proporciona cotizaciones.
 class GOhlc {
   const GOhlc(this.label, this.open, this.high, this.low, this.close);
   final String label;

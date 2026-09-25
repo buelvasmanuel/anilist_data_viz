@@ -9,5 +9,6 @@ export 'data/graphic_dataset.dart';
 export 'data/graphic_transformations.dart';
 export 'data/graphic_view_models.dart';
 export 'graphic_chart_registry.dart';
+export 'graphic_cases.dart';
 export 'graphic_charts_gallery_screen.dart';
 export 'shapes/graphic_custom_shapes.dart';

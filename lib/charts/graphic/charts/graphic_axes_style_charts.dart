@@ -105,7 +105,7 @@ Widget g46PlotBands(GraphicDataset d) {
           LineAnnotation(
             dim: Dim.y,
             value: d.globalMeanScore,
-            style: PaintStyle(strokeColor: Colors.black54, strokeWidth: 1, dash: [4, 3]),
+            style: PaintStyle(strokeColor: const Color(0xFFFFB74D), strokeWidth: 1, dash: [4, 3]),
           ),
         TagAnnotation(label: Label('Zona excelente'), values: [data.first.title, 95]),
       ],

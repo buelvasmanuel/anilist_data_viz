@@ -4,12 +4,13 @@ import 'package:anilist_data_viz/charts/fl_chart/fl_line_charts.dart';
 import 'package:anilist_data_viz/charts/fl_chart/fl_pie_charts.dart';
 import 'package:anilist_data_viz/charts/fl_chart/fl_progress_charts.dart';
 import 'package:anilist_data_viz/charts/models/chart_data.dart';
-import 'package:anilist_data_viz/core/errors/failure.dart';
-import 'package:anilist_data_viz/domain/entities/fuzzy_date.dart';
-import 'package:anilist_data_viz/domain/entities/media.dart';
-import 'package:anilist_data_viz/domain/entities/page_info.dart';
-import 'package:anilist_data_viz/domain/repositories/anilist_repository.dart';
+import 'package:anilist_data_viz/charts/common/case_support.dart';
+import 'package:anilist_data_viz/charts/common/master_case_gallery.dart';
+import 'package:anilist_data_viz/charts/d_chart/d_chart_gallery_screen.dart';
+import 'package:anilist_data_viz/charts/graphic/graphic_charts_gallery_screen.dart';
 import 'package:anilist_data_viz/presentation/screens/charts_gallery_screen.dart';
+import 'package:anilist_data_viz/presentation/screens/syncfusion_charts_gallery_screen.dart';
+import 'package:anilist_data_viz/presentation/state/anilist_live_provider.dart';
 import 'package:anilist_data_viz/presentation/state/charts_dataset_provider.dart';
 import 'package:anilist_data_viz/presentation/state/media_provider.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -17,56 +18,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 
-/// Repositorio falso para tests: devuelve obras de prueba sin red.
-class FakeRepository implements AniListRepository {
-  int calls = 0;
-  bool fail = false;
-  final List<String?> requestedTypes = [];
-
-  static const _genres = ['Action', 'Comedy', 'Drama', 'Romance', 'Fantasy', 'Horror'];
-  static const _formats = ['TV', 'MOVIE', 'OVA', 'ONA', 'TV_SHORT', 'SPECIAL', 'MUSIC'];
-  static const _statuses = ['FINISHED', 'RELEASING', 'NOT_YET_RELEASED'];
-  static const _sources = ['MANGA', 'ORIGINAL', 'LIGHT_NOVEL', 'NOVEL', 'GAME', 'OTHER', 'WEB_NOVEL'];
-
-  @override
-  Future<({List<Media> mediaList, PageInfo pageInfo})> getMediaList({
-    required int page,
-    required int perPage,
-    String? type,
-    String? format,
-    String? status,
-    String? season,
-    int? seasonYear,
-    String? genre,
-  }) async {
-    calls++;
-    requestedTypes.add(type);
-    if (fail) throw NetworkFailure('sin red');
-    final list = List.generate(perPage, (i) {
-      final id = (page - 1) * perPage + i;
-      return Media(
-        id: id,
-        title: 'T$id',
-        type: type,
-        format: _formats[id % _formats.length],
-        status: _statuses[id % _statuses.length],
-        source: _sources[id % _sources.length],
-        startDate: FuzzyDate(year: 1995 + id % 30),
-        averageScore: 55 + (id * 7) % 40,
-        episodes: 1 + (id * 5) % 90,
-        chapters: 10 + (id * 13) % 400,
-        genres: [_genres[id % _genres.length], _genres[(id + 2) % _genres.length]],
-      );
-    });
-    return (
-      mediaList: list,
-      pageInfo: PageInfo(currentPage: page, hasNextPage: page < 4),
-    );
-  }
-
-  @override
-  Future<Media> getMediaById(int id) async => Media(id: id, title: 'T$id');
-}
+import 'support/fake_repository.dart';
 
 Widget _wrap(Widget child) => MaterialApp(
       theme: ThemeData(
@@ -188,39 +140,54 @@ void main() {
     });
   });
 
-  testWidgets('La galería muestra los 31 casos sin errores', (tester) async {
-    tester.view.physicalSize = const Size(1200, 2000);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.reset);
+  final galleries = <String, Widget Function()>{
+    'FL Chart': () => const ChartsGalleryScreen(),
+    'Syncfusion': () => const SyncfusionChartsGalleryScreen(),
+    'DChart': () => const DChartGalleryScreen(),
+    'Graphic': () => const GraphicChartsGalleryScreen(),
+  };
 
-    final repo = FakeRepository();
-    await tester.pumpWidget(
-      MultiProvider(
-        providers: [
-          ChangeNotifierProvider(create: (_) => MediaProvider(repository: repo)),
-          ChangeNotifierProvider(create: (_) => ChartsDatasetProvider(repository: repo)),
-        ],
-        child: MaterialApp(
-          theme: ThemeData(
-            colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue, brightness: Brightness.dark),
-            useMaterial3: true,
+  for (final entry in galleries.entries) {
+    testWidgets('La galería ${entry.key} muestra las 63 tarjetas con gráfico', (tester) async {
+      tester.view.physicalSize = const Size(1200, 2000);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+
+      final repo = FakeRepository();
+      await tester.pumpWidget(
+        MultiProvider(
+          providers: [
+            ChangeNotifierProvider(create: (_) => MediaProvider(repository: repo)),
+            ChangeNotifierProvider(create: (_) => ChartsDatasetProvider(repository: repo)),
+            ChangeNotifierProvider(create: (_) => AniListLiveProvider(repository: repo)),
+          ],
+          child: MaterialApp(
+            theme: ThemeData(
+              colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue, brightness: Brightness.dark),
+              useMaterial3: true,
+            ),
+            home: entry.value(),
           ),
-          home: const ChartsGalleryScreen(),
         ),
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    for (var number = 1; number <= 31; number++) {
-      final finder = find.descendant(
-        of: find.byType(CircleAvatar),
-        matching: find.text('$number'),
       );
-      await tester.scrollUntilVisible(finder, 300, scrollable: find.byType(Scrollable).first);
-      expect(finder, findsOneWidget, reason: 'caso $number');
-      expect(tester.takeException(), isNull, reason: 'caso $number');
-    }
-    // La galería no debe modificar el estado de MediaProvider.
-    expect(tester.element(find.byType(ChartsGalleryScreen)).read<MediaProvider>().mediaList, isEmpty);
-  });
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+
+      final list = find.byWidgetPredicate((w) => w is Scrollable && w.axisDirection == AxisDirection.down).first;
+      for (var number = 1; number <= 63; number++) {
+        final finder = find.descendant(of: find.byType(CircleAvatar), matching: find.text('$number'));
+        await tester.scrollUntilVisible(finder, 300, scrollable: list);
+        expect(finder, findsOneWidget, reason: 'caso $number');
+        expect(find.byType(MasterCaseCard), findsWidgets);
+        expect(tester.takeException(), isNull, reason: 'caso $number');
+      }
+      expect(find.byType(TechnicalIssue), findsNothing);
+      // La galería no debe modificar el estado de MediaProvider.
+      expect(tester.element(find.byType(MasterCaseGallery)).read<MediaProvider>().mediaList, isEmpty);
+
+      // Desmonta para cancelar el sondeo de #63 y los timers de animación.
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump(const Duration(seconds: 5));
+    });
+  }
 }
