@@ -1,4 +1,6 @@
 import 'package:anilist_data_viz/presentation/screens/media_list_screen.dart';
+import 'package:anilist_data_viz/presentation/screens/charts_gallery_screen.dart';
+import 'package:anilist_data_viz/presentation/screens/syncfusion_charts_gallery_screen.dart';
 import 'package:anilist_data_viz/presentation/state/media_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -65,8 +67,28 @@ class HomeScreen extends StatelessWidget {
             const SizedBox(height: 16),
             ElevatedButton.icon(
               icon: const Icon(Icons.bar_chart),
-              label: const Text('Gráficas (Próximamente)'),
-              onPressed: null, // Disabled for now as per requirements
+              label: const Text('Gráficas (FL Chart)'),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const ChartsGalleryScreen(),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              icon: const Icon(Icons.pie_chart),
+              label: const Text('Gráficas (Syncfusion)'),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const SyncfusionChartsGalleryScreen(),
+                  ),
+                );
+              },
             ),
           ],
         ),
