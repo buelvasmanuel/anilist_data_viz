@@ -2,6 +2,7 @@ import 'package:anilist_data_viz/presentation/screens/media_list_screen.dart';
 import 'package:anilist_data_viz/presentation/screens/charts_gallery_screen.dart';
 import 'package:anilist_data_viz/presentation/screens/syncfusion_charts_gallery_screen.dart';
 import 'package:anilist_data_viz/charts/graphic/graphic_charts_gallery_screen.dart';
+import 'package:anilist_data_viz/charts/d_chart/d_chart_gallery_screen.dart';
 import 'package:anilist_data_viz/presentation/state/media_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -100,6 +101,19 @@ class HomeScreen extends StatelessWidget {
                   context,
                   MaterialPageRoute(
                     builder: (context) => const GraphicChartsGalleryScreen(),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              icon: const Icon(Icons.analytics),
+              label: const Text('Gráficas (DChart)'),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const DChartGalleryScreen(),
                   ),
                 );
               },

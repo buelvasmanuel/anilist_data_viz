@@ -156,7 +156,6 @@ class GraphicChartCard extends StatelessWidget {
           const SizedBox(height: 4),
           Wrap(spacing: 6, runSpacing: 4, children: [
             _Tag('Datos: ${origin.label}', Colors.blueGrey),
-            if (spec.syntheticDemo) const _Tag('DEMO SINTÉTICA', Color(0xFFC62828)),
           ]),
           const SizedBox(height: 4),
           Text(spec.construction, style: const TextStyle(fontSize: 11, fontFamily: 'monospace')),
