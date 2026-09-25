@@ -23,7 +23,7 @@ void main() {
         expect(tester.takeException(), isNull);
         // Desmonta para cancelar Timers/Streams (casos 52, 55, 60, 63).
         await tester.pumpWidget(const SizedBox());
-      }, skip: spec.number == 30);
+      });
     }
   }
 

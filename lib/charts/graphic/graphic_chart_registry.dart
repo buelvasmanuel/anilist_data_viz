@@ -29,7 +29,6 @@ class GraphicChartSpec {
     required this.builder,
     GraphicDataOrigin? origin,
     GraphicDataOrigin Function(GraphicDataset)? originOf,
-    this.syntheticDemo = false,
   })  : _origin = origin,
         _originOf = originOf,
         assert(origin != null || originOf != null);
@@ -39,9 +38,6 @@ class GraphicChartSpec {
   final GraphicClassification classification;
   final String construction;
   final GraphicChartBuilder builder;
-
-  /// true solo para #32 y #33: se muestran con datos sintéticos etiquetados.
-  final bool syntheticDemo;
 
   final GraphicDataOrigin? _origin;
   final GraphicDataOrigin Function(GraphicDataset)? _originOf;
@@ -126,9 +122,9 @@ final List<GraphicChartSpec> graphicChartRegistry = [
       construction: 'LineMark sin ejes ni padding', builder: g31SparklineLine),
 
   // ------------------------------ AVANZADOS 32-63 ------------------------------
-  GraphicChartSpec(number: 32, name: 'Candlestick', classification: _n, origin: _nd, syntheticDemo: true,
+  GraphicChartSpec(number: 32, name: 'Candlestick', classification: _n, origin: _nd,
       construction: 'CustomMark + CandlestickShape', builder: g32Candlestick),
-  GraphicChartSpec(number: 33, name: 'HLOC', classification: _c, origin: _nd, syntheticDemo: true,
+  GraphicChartSpec(number: 33, name: 'HLOC', classification: _c, origin: _nd,
       construction: 'CustomMark + HlocShape (Shape propio)', builder: g33Hloc),
   GraphicChartSpec(number: 34, name: 'Box and Whisker', classification: _c, origin: _der,
       construction: 'Cuartiles externos + CustomMark + BoxPlotShape (Shape propio)', builder: g34BoxPlot),

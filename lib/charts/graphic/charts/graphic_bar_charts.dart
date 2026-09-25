@@ -256,7 +256,7 @@ Widget g30DivergingBar(GraphicDataset d) {
         ),
       ],
       coord: RectCoord(transposed: true),
-      annotations: [LineAnnotation(dim: Dim.y, value: 0)],
+      annotations: [LineAnnotation(dim: Dim.y, value: 0, style: PaintStyle(strokeColor: Colors.black26))],
       axes: [Defaults.verticalAxis, Defaults.horizontalAxis],
     );
   });

@@ -345,4 +345,5 @@ Widget g62InvertedOpposedAxis(GraphicDataset d) => guard(
           Defaults.verticalAxis..dim = Dim.y,
         ],
       ),
+      message: 'NO DISPONIBLE: AniList no proporciona rankings en este dataset.',
     );
