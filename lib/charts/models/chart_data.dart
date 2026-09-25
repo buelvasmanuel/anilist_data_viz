@@ -77,35 +77,3 @@ class ChartDataRange extends ChartData {
     this.q3,
   });
 }
-
-/// Resumen agregado de la muestra cargada (N7). Todos los valores se
-/// calculan a partir de los datos recibidos de AniList; si un valor no puede
-/// calcularse (p. ej. ninguna obra tiene score) queda en `null`.
-class ChartDataSummary extends ChartData {
-  /// Número total de obras en la muestra.
-  final int totalMedia;
-
-  /// Obras con `averageScore` informado.
-  final int scoredMedia;
-
-  /// Media de `averageScore` (0–100) de las obras con score.
-  final double? meanAverageScore;
-
-  /// Obras con estado `FINISHED`.
-  final int finishedCount;
-
-  /// Obras con `status` informado.
-  final int withStatusCount;
-
-  /// Porcentaje (0–100) de obras `FINISHED` sobre las que tienen estado.
-  final double? finishedPercent;
-
-  ChartDataSummary({
-    required this.totalMedia,
-    required this.scoredMedia,
-    required this.meanAverageScore,
-    required this.finishedCount,
-    required this.withStatusCount,
-    required this.finishedPercent,
-  });
-}
