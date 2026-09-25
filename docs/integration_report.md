@@ -50,7 +50,7 @@ Todos los fallos severos o advertencias de compilación cruzada y widgets sin de
 ```
 All tests passed!
 ```
-Las 190 suites de prueba pasaron correctamente sin presentar fallos lógicos ni caídas en tiempo de render.
+Las 194 suites de prueba pasaron correctamente sin presentar fallos lógicos ni caídas en tiempo de render.
 
 ## 12. Resultado de flutter build web
 ```
