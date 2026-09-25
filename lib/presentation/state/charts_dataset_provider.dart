@@ -3,7 +3,8 @@ import 'package:anilist_data_viz/core/errors/failure.dart';
 import 'package:anilist_data_viz/domain/entities/media.dart';
 import 'package:anilist_data_viz/domain/repositories/anilist_repository.dart';
 import 'package:anilist_data_viz/presentation/state/media_provider.dart';
-
+import 'package:anilist_data_viz/charts/graphic/data/graphic_dataset.dart';
+import 'package:anilist_data_viz/charts/graphic/data/graphic_adapters.dart';
 /// Muestra de datos para la galería de gráficas.
 ///
 /// Es independiente de [MediaProvider]: no hereda los filtros ni el scroll de
@@ -49,6 +50,9 @@ class ChartsDatasetProvider extends ChangeNotifier {
 
   int _requestId = 0;
 
+  GraphicDataset? _graphicDataset;
+  GraphicDataset? get graphicDataset => _graphicDataset;
+
   /// Carga la muestra. Mientras se carga se conservan los datos anteriores
   /// para que las gráficas animen la transición al recibir los nuevos.
   Future<void> load({String? type}) async {
@@ -87,6 +91,23 @@ class ChartsDatasetProvider extends ChangeNotifier {
       }
 
       _media = collected;
+      _graphicDataset = GraphicDataset.fromAnime(
+        GraphicAdapters.animeFrom<Media>(
+          collected,
+          title: (m) => m.title,
+          popularity: (m) => m.popularity ?? 0,
+          format: (m) => m.format ?? 'UNKNOWN',
+          status: (m) => m.status ?? 'UNKNOWN',
+          score: (m) => m.averageScore,
+          episodes: (m) => m.episodes,
+          genres: (m) => m.genres,
+          seasonYear: (m) => m.seasonYear,
+          startYear: (m) => m.startDate?.year,
+          endYear: (m) => m.endDate?.year,
+          rank: (m) => null,
+          studio: (m) => m.studios.isNotEmpty ? m.studios.first.name : null,
+        ),
+      );
       _loadedType = _type;
       _state = collected.isEmpty ? ProviderState.empty : ProviderState.success;
     } on Failure catch (e) {
