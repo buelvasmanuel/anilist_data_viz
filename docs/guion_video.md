@@ -2,28 +2,28 @@
 
 ## 1. Estructura general del video
 
-El profesor va a ver cómo funciona el proyecto por dentro, siguiendo el mismo camino que recorren los datos: desde la petición a AniList hasta el gráfico dibujado por cada una de las cuatro librerías (FL Chart, Syncfusion, d_chart y Graphic).
+El video sigue el mismo camino que recorren los datos dentro de la app: desde que se pide información a AniList hasta que aparece dibujada en un gráfico de cada una de las cuatro librerías (FL Chart, Syncfusion, d_chart y Graphic).
 
 | Bloque | Integrante | Tema | Termina en |
 |---|---|---|---|
-| 1 | Persona 1 | Arquitectura y estructura de carpetas | La cadena completa AniList → UI |
-| 2 | Persona 2 | API, GraphQL, modelos, paginación y trends | Los datos ya convertidos en entidades |
-| 3 | Persona 3 | Providers, dataset común y cómo cada librería lo dibuja | Un caso dibujado por las cuatro librerías |
-| 4 | Persona 4 | 63 × 4 = 252, estrategias y casos #2, #52 y #63 | Cierre del video |
+| 1 | Persona 1 | Cómo está organizado el proyecto | El recorrido completo de un dato |
+| 2 | Persona 2 | Cómo hablamos con AniList y cómo convertimos la respuesta | Los datos listos para usarse en la app |
+| 3 | Persona 3 | Cómo se guarda el estado y cómo los datos llegan a los gráficos | Un mismo caso dibujado por las cuatro librerías |
+| 4 | Persona 4 | Qué significa 252, cómo lo resolvimos y los casos especiales | Cierre |
 
-El texto hablado de cada bloque está equilibrado en extensión (entre 1 000 y 1 100 palabras aproximadamente por persona). No se indica una duración exacta porque depende del ritmo de cada uno; leído a ritmo normal y con las pausas para mostrar código, cada bloque debería durar lo mismo que los demás.
+Cada bloque tiene una cantidad parecida de texto hablado (entre 720 y 800 palabras aproximadamente), así que la participación queda equilibrada.
 
-**Convenciones del documento**
+**Cómo leer este documento**
 
-- Lo que está en bloque de cita (`>`) es el **texto literal** que se dice.
-- Lo que está entre corchetes y en cursiva, *[así]*, es una **indicación de pantalla**: no se lee.
-- Todos los archivos, clases y métodos citados existen en el repositorio actual.
+- El texto en bloque de cita (`>`) es lo que se dice, tal cual.
+- Lo que va entre corchetes y en cursiva, *[así]*, es lo que se ve en pantalla. No se lee.
+- El código se muestra como evidencia. Quien habla explica la idea, no lee el código.
 
-**Nota sobre las fuentes (verificación)**
+**Nota de verificación**
 
-- `docs/contexto.md` **no existe** en el repositorio (ni en `main`, ni en `final-integration`, ni en el historial). El guion se construyó leyendo directamente el código de `lib/`, `pubspec.yaml`, los tests de `test/` y los documentos que sí existen (`docs/AUDIT_252_CURRENT.md`, `docs/integration_report.md`, `docs/*.md` por librería).
-- Diferencia detectada entre comentarios y código: `lib/charts/graphic/data/graphic_view_models.dart` describe el flujo como `Provider → DataTransformations → Chart Models → adapters`. En el código actual, `ChartsDatasetProvider` llama directamente a `GraphicAdapters.animeFrom<Media>(...)` y a `GraphicDataset.fromAnime(...)`, que usa `GraphicTransformations`. La clase `DataTransformations` (`lib/charts/transformations/data_transformations.dart`) sigue existiendo y tiene tests, pero ningún archivo de `lib/` la importa. En el guion se explica el flujo real.
-- La capa `domain` solo tiene entidades y el contrato del repositorio: no hay casos de uso. El guion no los menciona.
+- `docs/contexto.md` no existe en el repositorio, así que el guion está basado directamente en el código actual, los tests y los demás documentos de `docs/`.
+- Algunos comentarios de `graphic_view_models.dart` describen un paso por `DataTransformations`. En el código actual ese paso no existe: el provider construye el dataset directamente con `GraphicAdapters` y `GraphicDataset`. `DataTransformations` solo se usa en los tests. El guion cuenta el flujo real.
+- La capa de dominio tiene entidades y el contrato del repositorio, pero no casos de uso. El guion no los menciona.
 
 ---
 
@@ -31,60 +31,55 @@ El texto hablado de cada bloque está equilibrado en extensión (entre 1 000 y 1
 
 ## Objetivo de esta parte
 
-Demostrar que entendemos cómo está organizado el proyecto, qué responsabilidad tiene cada carpeta y por qué las dependencias van en la dirección en que van. Al final debe quedar clara la cadena completa por la que pasan los datos.
+Mostrar que sabemos por qué el proyecto está dividido como está, qué problema resuelve cada capa y cómo viaja un dato desde AniList hasta la pantalla.
 
 ## Qué mostrar en pantalla
 
-1. La app abierta en `HomeScreen` (botones *Explorar Anime*, *Explorar Manga* y las cuatro galerías de gráficas).
-2. El árbol de `lib/` en el editor, con las carpetas `core`, `data`, `domain`, `presentation` y `charts` desplegadas un nivel.
-3. `lib/main.dart` completo (es corto).
-4. `lib/domain/repositories/anilist_repository.dart` (solo la firma de la clase).
-5. `lib/charts/common/library_cases.dart`.
-6. Al final, el diagrama de la cadena (puede ser una diapositiva o el diagrama del final de este documento).
+1. La app en la pantalla de inicio, con los botones de explorar y las cuatro galerías.
+2. El árbol de `lib/` con las cinco carpetas principales desplegadas un nivel.
+3. `lib/main.dart`.
+4. Una galería abierta (por ejemplo, Syncfusion) mostrando dos o tres tarjetas.
+5. Al final, el mapa del proyecto (la última sección de este documento).
 
 ## GUION HABLADO
 
-*[Pantalla: la app en HomeScreen.]*
+*[Pantalla: la app en la pantalla de inicio.]*
 
-> Hola, somos el equipo de AniList Data Viz. En este video vamos a explicar cómo funciona el proyecto por dentro. No vamos a hablar de Flutter en general, sino de cómo resolvimos nosotros el problema: consumir datos reales de AniList y representarlos con 63 tipos de gráfico en cuatro librerías distintas.
+> Hola, somos el equipo de AniList Data Viz. En este video vamos a explicar cómo funciona el proyecto por dentro. La idea era tomar datos reales de AniList, que es una base de datos de anime y manga, y representarlos con 63 tipos de gráfico distintos en cuatro librerías diferentes de Flutter.
 >
-> Desde la pantalla principal hay dos caminos. Uno es explorar anime o manga como listado, con filtros y una pantalla de detalle. El otro son las cuatro galerías de gráficas: FL Chart, Syncfusion, Graphic y d_chart. Cada galería muestra los mismos 63 casos, así que al final tenemos 252 implementaciones. Eso lo va a explicar al detalle el cuarto integrante; yo voy a explicar cómo está organizado el código para que eso sea posible.
+> Desde la pantalla principal hay dos caminos. Uno es explorar anime o manga como un listado normal, con filtros y una pantalla de detalle. El otro son las cuatro galerías de gráficas, una por librería. Las cuatro muestran los mismos 63 casos, con los mismos datos, y así se pueden comparar entre sí.
+>
+> El reto principal no era hacer un gráfico, sino hacer 252 sin que el proyecto se volviera inmanejable. Por eso le dimos tanta importancia a la organización.
 
 *[Pantalla: árbol de `lib/`.]*
 
-> El código está dentro de `lib` y lo dividimos en cinco carpetas principales, cada una con una responsabilidad concreta.
+> Dividimos el código en capas, y cada una tiene una sola preocupación.
 >
-> `core` es lo que comparte todo el proyecto y no depende de nada. Aquí está `ApiConstants`, que guarda el endpoint de AniList, y la carpeta `errors`. En `errors` separamos dos cosas: las excepciones, `ServerException` y `NetworkException`, que se lanzan en la capa de datos, y los `Failure`, que son `ServerFailure`, `NetworkFailure` y `ParsingFailure`, y que son lo que ve la capa de presentación. Esa separación es intencional: la pantalla nunca recibe una excepción de HTTP directamente.
+> La capa de datos es la única que sabe que AniList existe. Es la que arma las consultas, hace las peticiones y lee el JSON que vuelve. Si mañana AniList cambiara un campo, solo tendríamos que tocar esta parte.
 >
-> `data` es la única capa que sabe que AniList existe. Dentro tiene tres partes. `datasources/anilist` contiene `AniListRemoteDataSourceImpl`, que hace las peticiones HTTP, y la carpeta `queries` con las consultas GraphQL. `models` tiene las clases que saben leer JSON, como `MediaModel`, `PageInfoModel` y `MediaTrendModel`. Y `repositories` tiene `AniListRepositoryImpl`, que es la implementación concreta del repositorio.
+> La capa de dominio es el centro. Aquí están las entidades con las que trabaja el resto de la app, como una obra o un punto de la serie de tendencias, y el contrato del repositorio, que dice qué datos puede pedir la aplicación sin decir cómo se consiguen. Estas clases no saben nada de HTTP ni de JSON.
 >
-> `domain` es el centro de la aplicación. Tiene las entidades, `Media`, `MediaTrend`, `PageInfo` y `FuzzyDate`, que son clases de Dart puras, sin JSON y sin HTTP. Y tiene el contrato `AniListRepository`, que es una clase abstracta. En nuestro caso el dominio no tiene casos de uso: los providers llaman directamente al contrato del repositorio.
-
-*[Pantalla: `lib/domain/repositories/anilist_repository.dart`.]*
-
-> Esto es importante para entender la dirección de las dependencias. Los providers no conocen `AniListRepositoryImpl`, conocen `AniListRepository`, la abstracción que vive en el dominio. Gracias a eso, en los tests podemos inyectar un repositorio falso, el `FakeRepository` de `test/support`, y probar los providers y los 252 builders sin hacer peticiones reales.
+> La capa de presentación tiene las pantallas y el estado. Aquí están los providers, que piden datos al repositorio y avisan a la interfaz cuando algo cambia.
 >
-> `presentation` tiene dos carpetas. `state`, con los tres providers de la aplicación, y `screens`, con la pantalla principal, el listado, el detalle y dos de las galerías.
+> Luego está `core`, con lo que comparten todos: la dirección de AniList y los tipos de error. Y por último `charts`, que es la parte más grande del proyecto, donde vive todo lo relacionado con gráficos: el catálogo de los 63 casos, el conjunto de datos común y una carpeta por librería.
 >
-> Y por último está `charts`, que es la parte más grande del proyecto. Aquí está todo lo relacionado con gráficos. En `charts/models` está `master_chart_registry.dart`, que es la matriz de los 63 casos con la capacidad de cada librería. En `charts/graphic/data` está el dataset común, `GraphicDataset`, junto con los adaptadores y las transformaciones. Aunque la carpeta se llama `graphic`, ese dataset lo usan las cuatro librerías, no solo Graphic. Luego hay una carpeta por librería: `fl_chart`, `syncfusion`, `d_chart` y `graphic`, y cada una tiene su archivo de builders con sus 63 casos. Y en `charts/common` están las piezas compartidas: `CaseData`, `CaseImpl`, la galería común y los contenedores de los casos en vivo, `LazyLoadingHost` y `LiveStreamingHost`.
->
-> Fuera de `lib` también hay una carpeta que refleja esta misma división: `test`. Tenemos tests del DataSource, del modelo, del `MediaProvider`, de las transformaciones, de la galería, de los casos en vivo y de los 252 builders. Ninguno llama a AniList de verdad: el del DataSource usa un cliente HTTP simulado, y los de providers y gráficos usan el `FakeRepository`, así que no dependen de que AniList responda en ese momento.
+> Una decisión importante fue separar los errores en dos niveles. Abajo, en la capa de datos, un fallo es una excepción técnica, por ejemplo un timeout o una respuesta mal formada. Al subir por el repositorio se convierte en un fallo de la aplicación, que es lo único que ven las pantallas. Así la interfaz puede mostrar “sin conexión” o “error del servidor” sin saber nada de HTTP.
 
 *[Pantalla: `lib/main.dart`.]*
 
-> Todo esto se conecta en `main.dart`. Aquí creamos un solo `http.Client`, se lo pasamos a `AniListRemoteDataSourceImpl`, y ese DataSource se lo pasamos a `AniListRepositoryImpl`. Después registramos tres `ChangeNotifierProvider` dentro de un `MultiProvider`: `MediaProvider`, `ChartsDatasetProvider` y `AniListLiveProvider`. Los tres reciben la misma instancia del repositorio. O sea que `main.dart` es el único sitio donde se decide qué implementación concreta se usa; el resto del código trabaja contra abstracciones.
+> Todo esto se conecta en un solo lugar, el `main`. Ahí creamos el cliente HTTP, el DataSource y el repositorio, y registramos tres providers. Los tres reciben el mismo repositorio, pero lo conocen solo por su contrato, no por su implementación concreta. Gracias a eso, en los tests reemplazamos el repositorio por uno falso y podemos probar providers y gráficos sin llamar a AniList. Es la parte del proyecto que más nos ayudó cuando empezamos a tener cientos de gráficos: podíamos verificar que todos se dibujaban sin depender de la red.
 
-*[Pantalla: `lib/charts/common/library_cases.dart`.]*
+*[Pantalla: una galería abierta, recorrer dos o tres tarjetas.]*
 
-> Del lado de los gráficos, el punto de entrada es `library_cases.dart`. La función `casesFor` recibe una librería y devuelve su mapa de 63 casos: `flChartCases`, `syncfusionCases`, `dChartCases` o `graphicCases`. Las cuatro pantallas de galería usan el mismo widget, `MasterCaseGallery`, y lo único que cambia es el mapa de casos que le pasan. Por ejemplo, `DChartGalleryScreen` es solo un `MasterCaseGallery` con `library: ChartLibrary.dChart` y `cases: dChartCases`. Por eso las cuatro galerías tienen la misma estructura, el mismo orden y los mismos filtros: uno por estrategia de implementación y otro por categoría, que agrupa los 63 casos en básicos, apilados y rangos, interacción, escalas, estadísticos y especiales. Así se pueden comparar las cuatro librerías caso por caso.
+> Para los gráficos aplicamos la misma idea. Las cuatro galerías usan una única pantalla común. Lo único que cambia entre una y otra es el conjunto de 63 implementaciones que se le pasa. Por eso todas tienen la misma estructura, el mismo orden y los mismos filtros. Cada tarjeta muestra el número del caso, qué ofrece la librería para ese gráfico, cómo lo resolvimos nosotros, de dónde salen los datos y el gráfico en sí.
 >
-> Hay una decisión de organización que conviene aclarar. Las galerías de FL Chart y Syncfusion tienen su pantalla en `presentation/screens`, mientras que las de Graphic y d_chart la tienen dentro de su propia carpeta en `charts`. Es una diferencia de ubicación que viene de cómo se fue integrando cada librería, pero las cuatro pantallas hacen exactamente lo mismo: delegan en `MasterCaseGallery`.
+> Si cada galería hubiera sido una pantalla distinta, cada una con su propia lógica, comparar las cuatro librerías habría sido casi imposible. Con una estructura común, la diferencia entre librerías queda solo en cómo se dibuja cada caso.
 
-*[Pantalla: diagrama de la cadena.]*
+*[Pantalla: el mapa del proyecto.]*
 
-> Con todo esto ya podemos describir el recorrido completo de un dato. Empieza en AniList, que es una API GraphQL. El DataSource arma la consulta, hace un POST y recibe JSON. Ese JSON se convierte en modelos con `fromJson`. El Repository recibe esos modelos, traduce los errores a `Failure` y los entrega al resto de la app como entidades del dominio. El Provider pide los datos al repositorio y guarda el estado. En el caso de las gráficas, el `ChartsDatasetProvider` transforma una sola vez esas entidades en un `GraphicDataset`, que es un conjunto de listas ya calculadas. La galería empaqueta ese dataset en un `CaseData`, se lo pasa al builder del caso, y el builder usa la API de su librería para dibujar el widget que aparece en pantalla.
+> Con esto ya podemos contar el recorrido completo de un dato. Empieza en AniList, que es una API GraphQL. El DataSource manda la consulta y recibe JSON. Ese JSON se convierte en modelos, y el repositorio los entrega al resto de la app como entidades del dominio. El provider pide esos datos y guarda el estado. En el caso de los gráficos, el provider transforma una sola vez las obras en un conjunto de datos común, ya calculado. La galería le pasa ese conjunto a cada caso, cada caso tiene un builder, y el builder usa la librería correspondiente para dibujar lo que se ve en pantalla.
 >
-> La razón de separarlo así es que cada capa se puede cambiar sin tocar las otras. Si AniList cambia un campo, se toca el modelo. Si queremos otra librería de gráficos, se agrega otro mapa de casos. Y ningún widget de gráfico hace peticiones ni calcula estadísticas: solo dibuja.
+> La regla que seguimos es que ningún gráfico hace peticiones ni calcula estadísticas por su cuenta. Solo dibuja lo que recibe. Eso es lo que nos permitió llegar a 252 implementaciones sin repetir lógica.
 
 ## Código que conviene mostrar
 
@@ -107,20 +102,7 @@ runApp(
 );
 ```
 
-Qué decir: “Aquí se arma toda la cadena una sola vez. Los tres providers comparten el mismo repositorio y ninguno sabe que por debajo hay HTTP.”
-
-**`lib/domain/repositories/anilist_repository.dart`**
-
-```dart
-abstract class AniListRepository {
-  Future<({List<Media> mediaList, PageInfo pageInfo})> getMediaList({ ... });
-  Future<Media> getMediaById(int id);
-  Future<({List<MediaTrend> trends, PageInfo pageInfo})> getMediaTrends({ ... });
-  Future<List<Media>> getMediaSnapshots(List<int> ids);
-}
-```
-
-Qué decir: “Estas cuatro operaciones son todo lo que la app necesita de AniList: listado paginado, detalle, la serie de trends y los contadores para el sondeo del caso 63.”
+Qué comentar: la cadena se arma una sola vez aquí, y los tres providers comparten el mismo repositorio.
 
 **`lib/charts/common/library_cases.dart`**
 
@@ -133,11 +115,11 @@ Map<int, CaseImpl> casesFor(ChartLibrary library) => switch (library) {
     };
 ```
 
-Qué decir: “Cuatro mapas de 63 entradas. Este es el punto único de acceso a las 252 implementaciones.”
+Qué comentar: cuatro colecciones de 63 casos. Es lo único que diferencia una galería de otra.
 
 ## Transición
 
-> Con esta estructura ya sabemos dónde vive cada cosa. Ahora mi compañero va a entrar en la capa de datos y explicar cómo hacemos realmente la comunicación con AniList.
+> Ya sabemos dónde vive cada cosa. Ahora mi compañero va a explicar cómo es realmente la conversación con AniList y cómo convertimos lo que responde en datos que la app puede usar.
 
 ---
 
@@ -145,63 +127,49 @@ Qué decir: “Cuatro mapas de 63 entradas. Este es el punto único de acceso a 
 
 ## Objetivo de esta parte
 
-Demostrar que entendemos cómo se habla con AniList: qué se envía, qué se recibe, cómo se manejan los errores, cómo el JSON se convierte en entidades, y cómo funcionan la paginación y la serie de trends.
+Mostrar que entendemos qué le pedimos a AniList, cómo lo pedimos, qué hacemos cuando algo falla y cómo la respuesta se convierte en datos de la app. Incluye la paginación y la serie de tendencias.
 
 ## Qué mostrar en pantalla
 
-1. `lib/core/constants/api_constants.dart` (una línea).
-2. `lib/data/datasources/anilist/anilist_remote_datasource.dart` → método `_performQuery`, luego `getMediaList`.
-3. `lib/data/datasources/anilist/queries/media_queries.dart` → `getMediaList`, luego `getMediaTrends`.
-4. `lib/data/models/media_model.dart` → `MediaModel.fromJson`.
-5. `lib/data/repositories/anilist_repository_impl.dart` → método `_guard`.
-6. `lib/presentation/state/media_provider.dart` → `fetchMedia` (solo la parte de la página).
-7. Opcional: la app en el listado de anime, haciendo scroll hasta que cargue más.
+1. `anilist_remote_datasource.dart`, el método `_performQuery`.
+2. `media_queries.dart`, la consulta del listado.
+3. `media_model.dart`, el `fromJson`.
+4. La app en el listado de anime, haciendo scroll hasta que cargue otra página.
+5. `media_queries.dart`, la consulta de tendencias.
 
 ## GUION HABLADO
 
-*[Pantalla: `api_constants.dart`.]*
+*[Pantalla: `_performQuery`.]*
 
-> Mi parte es la comunicación con AniList. AniList expone una sola URL, `https://graphql.anilist.co`, que tenemos en `ApiConstants.anilistGraphqlUrl`. No hay un endpoint por recurso como en REST: todas las consultas van a la misma dirección y lo que cambia es el cuerpo de la petición.
-
-*[Pantalla: `_performQuery` en `anilist_remote_datasource.dart`.]*
-
-> Toda la comunicación pasa por un único método privado del DataSource, `_performQuery`. Recibe dos cosas: el texto de la consulta GraphQL y un mapa de variables. Con eso hace un `client.post` a la URL de AniList, con los headers `Content-Type` y `Accept` en `application/json`, y en el cuerpo manda un JSON con dos claves: `query` y `variables`. Además le ponemos un `timeout` de 15 segundos.
+> Mi parte es cómo hablamos con AniList. AniList tiene una API GraphQL, así que no hay una dirección distinta para cada cosa. Todo va a la misma URL y lo que cambia es la consulta que mandamos.
 >
-> Cuando llega la respuesta, primero intentamos decodificar el cuerpo. Después revisamos si viene la clave `errors`. Esto lo hacemos antes de mirar el código HTTP, porque AniList puede devolver errores de GraphQL tanto con 200 como con 400, y en los dos casos el mensaje útil está dentro de `errors`. Si hay errores, lanzamos una `ServerException` con el mensaje del primero. Si el status es 200 y existe `data`, devolvemos solo `data`, que es lo que interesa. Si no, lanzamos `ServerException` con el código HTTP.
+> Por eso concentramos toda la comunicación en un único método del DataSource, `_performQuery`. Recibe la consulta y sus variables, las manda con un POST en formato JSON y espera como máximo 15 segundos. Todas las peticiones de la app pasan por aquí, así que el manejo de errores está escrito una sola vez.
 >
-> Los problemas de conexión se tratan aparte: un `TimeoutException`, un `SocketException` o un `ClientException` se convierten en `NetworkException`. Esa distinción entre error del servidor y error de red la probamos en `test/datasource_test.dart`, incluido el caso de error GraphQL con 200 y con 400.
+> Algo que aprendimos durante el proyecto es que AniList puede devolver un error de GraphQL con un código HTTP 200 o con un 400. Si solo miráramos el código HTTP, perderíamos el mensaje real. Por eso primero revisamos si la respuesta trae errores y, si los trae, usamos el mensaje de AniList. Los problemas de conexión, como un timeout o no tener internet, se tratan aparte como errores de red. Luego el repositorio convierte cualquiera de estos errores en el tipo de fallo que entienden las pantallas.
 
-*[Pantalla: `media_queries.dart`, consulta `getMediaList`.]*
+*[Pantalla: consulta del listado en `media_queries.dart`.]*
 
-> Las consultas están en la clase `MediaQueries`. Todas las que devuelven obras completas reutilizan un fragmento, `MediaFields`, donde pedimos exactamente los campos que usa la app: título en sus variantes, formato, estado, fechas, episodios, capítulos, `averageScore`, `popularity`, `trending`, `favourites`, `rankings`, géneros, estudios, personajes, relaciones e imágenes. Esa es la ventaja de GraphQL en este proyecto: no recibimos campos que no vamos a usar.
+> Las consultas están escritas en GraphQL. Tenemos una parte compartida, un fragmento, con los campos que usa la app: títulos, formato, estado, fechas, puntuación, popularidad, rankings, géneros, estudios e imágenes. Lo reutilizamos en la consulta del listado y en la del detalle. La ventaja de GraphQL aquí es que pedimos exactamente lo que vamos a mostrar, ni más ni menos.
 >
-> La consulta del listado, `getMediaList`, declara las variables con su tipo de AniList, por ejemplo `$type: MediaType` o `$season: MediaSeason`, y las usa dentro de `Page(page: $page, perPage: $perPage)`. Dentro de `Page` pedimos dos cosas: `pageInfo`, con `currentPage`, `hasNextPage`, `lastPage`, `perPage` y `total`, y la lista `media` filtrada y ordenada por `POPULARITY_DESC`.
-
-*[Pantalla: método `getMediaList` del DataSource.]*
-
-> En el método `getMediaList` del DataSource se arma el mapa de variables. `page` y `perPage` siempre van, y los filtros solo se agregan si no son nulos ni vacíos. Así la misma consulta sirve para “todo el anime” o para “anime de invierno de 2024 del género Action”. Con la respuesta, el `pageInfo` pasa por `PageInfoModel.fromJson` y cada elemento de `media` pasa por `MediaModel.fromJson`. El resultado es un `PaginatedMediaModel`.
+> La consulta del listado trabaja por páginas. Le decimos qué página queremos y cuántos elementos, y además los filtros: tipo, formato, estado, temporada, año o género. Solo mandamos los filtros que el usuario eligió, así que la misma consulta sirve para “todo el anime” o para “anime de invierno de 2024 de acción”. Los resultados vienen ordenados por popularidad, y ese orden es importante: gracias a él, la muestra de las galerías siempre son las obras más populares.
 >
-> Los otros tres métodos siguen el mismo patrón. `getMediaById` usa la consulta `getMediaDetail`, que es `Media(id: $id)` con el mismo fragmento, y es la que alimenta la pantalla de detalle. `getMediaTrends` la explico al final. Y `getMediaSnapshots` es una consulta mucho más ligera que se usa para el caso 63: filtra con `id_in` y solo pide `id`, título, `popularity`, `trending` y `favourites`, porque se ejecuta cada 30 segundos y no tiene sentido traer descripciones, personajes e imágenes cada vez.
+> Para el caso de tiempo real tenemos una consulta aparte, mucho más ligera, que solo pide la popularidad de unas pocas obras. Como se repite cada 30 segundos, no tenía sentido traer descripciones e imágenes cada vez.
 
 *[Pantalla: `MediaModel.fromJson`.]*
 
-> `MediaModel.fromJson` es donde el JSON de AniList se adapta a lo que necesita nuestra app. Algunos ejemplos concretos: el título se resuelve con prioridad `userPreferred`, luego `english`, luego `romaji`, luego `native`, y si no hay ninguno se usa `'Unknown Title'`. Los estudios vienen anidados en `studios.nodes` y los personajes en `characters.edges`, así que se recorren y se convierten con `StudioModel` y `CharacterModel`. Y `rankings` es una lista: con la función interna `allTimeRank` buscamos el ranking de tipo `POPULAR` o `RATED` que tenga `allTime` en `true`, y lo guardamos como `popularAllTimeRank` y `ratedAllTimeRank`. Ese último es el que usa el caso 62. Las fechas de inicio y fin llegan como objetos con año, mes y día que pueden venir incompletos, por eso pasan por `FuzzyDateModel`; de ahí sale el año de inicio que usan varios gráficos cuando la obra no tiene `seasonYear`.
+> Cuando llega la respuesta, cada obra se convierte en un modelo. El JSON de AniList no siempre viene completo ni con la forma que nos conviene, y aquí es donde lo resolvemos. Por ejemplo, una obra puede no tener título en inglés, así que elegimos el primero disponible en un orden de preferencia. Los rankings vienen como una lista, y de ahí extraemos el puesto histórico de popularidad y de puntuación. Y las fechas pueden venir incompletas, con solo el año.
 >
-> La relación entre modelo y entidad es de herencia: `MediaModel extends Media`. El modelo añade el `fromJson`, pero es una `Media` válida. Por eso el repositorio puede devolver la lista de modelos como lista de entidades sin copiar nada.
+> El modelo hereda de la entidad del dominio. Es decir, el modelo sabe leer JSON, pero al mismo tiempo es una obra válida para el resto de la app. Por eso el repositorio puede entregarlo directamente sin copiar datos.
 
-*[Pantalla: `_guard` en `anilist_repository_impl.dart`.]*
+*[Pantalla: la app, scroll en el listado hasta que cargue más.]*
 
-> El repositorio tiene una responsabilidad concreta: traducir errores. Con el método `_guard`, una `NetworkException` se convierte en `NetworkFailure`, una `ServerException` en `ServerFailure` y cualquier otra cosa, por ejemplo un JSON con una forma inesperada, en `ParsingFailure`. Los providers solo capturan `Failure`, así que nunca dependen de detalles de HTTP.
+> La paginación se basa en la información de página que devuelve AniList. En cada respuesta viene la página actual y si existe una siguiente. Cuando el usuario llega casi al final de la lista, pedimos la página siguiente. Si AniList dice que no hay más, ya no se hace la petición. En el listado, cada página trae 20 obras. Las obras que ya estaban en la lista no se repiten. Y si el usuario cambia un filtro mientras una página todavía está cargando, esa respuesta vieja se descarta para que no se mezcle con la nueva.
 
-*[Pantalla: `fetchMedia` en `media_provider.dart`; opcional, la app haciendo scroll en el listado.]*
+*[Pantalla: consulta de tendencias en `media_queries.dart`.]*
 
-> La paginación funciona con `pageInfo`. En el listado, `MediaProvider.fetchMedia` calcula la página a pedir como `currentPage + 1`, siempre con `perPage` 20. Antes de pedir, comprueba `hasNextPage`: si AniList dijo que no hay más, no hace la petición. La pantalla `MediaListScreen` tiene un `ScrollController` que llama a `fetchMedia` cuando faltan 200 píxeles para el final. Cuando llega la página nueva, se descartan las obras cuyo `id` ya estaba en la lista. Y si mientras tanto el usuario cambió un filtro, la respuesta vieja se ignora gracias a un contador `_currentRequestId`.
-
-*[Pantalla: consulta `getMediaTrends` en `media_queries.dart`.]*
-
-> Por último, los trends. Para los casos que necesitan una serie temporal, como el candlestick o los indicadores del 41 al 44, usamos el campo `Media.trends` de AniList. La consulta `getMediaTrends` pide, para una obra, `trends(sort: DATE_DESC, page, perPage)` con su propio `pageInfo` y nodos con `mediaId`, `date`, `popularity` y `trending`. AniList devuelve como máximo 25 nodos por página en este campo, así que `ChartsDatasetProvider` pide cuatro páginas en paralelo de la obra más popular de la muestra, junta los nodos por fecha para no duplicar días y los ordena de más antiguo a más reciente. `MediaTrendModel.fromJson` convierte `date`, que llega como timestamp Unix en segundos, a un `DateTime` en UTC.
+> Por último, las tendencias. Algunos gráficos necesitan una serie en el tiempo, como el candlestick o las medias móviles. AniList tiene un campo llamado `trends` que da estadísticas diarias de una obra, pero solo devuelve 25 días por página. Por eso pedimos cuatro páginas en paralelo para la obra más popular de la muestra, juntamos los días sin duplicarlos y los ordenamos del más antiguo al más reciente.
 >
-> Hay un detalle que tuvimos en cuenta: la `popularity` de trends es acumulada, es el número de usuarios que tienen la obra en su lista, y casi nunca baja. Por eso no se grafica tal cual. `GraphicTransformations.dailyGains` calcula la variación neta por día, y esa es la serie que se usa en los casos financieros adaptados. Y si trends falla, el error se guarda en `trendsError`, pero la muestra principal sigue siendo válida y el resto de gráficos se dibuja igual.
+> Aquí hubo un detalle importante: la popularidad de esa serie es acumulada, es el número total de usuarios que tienen la obra en su lista, y casi nunca baja. Graficarla tal cual daba una línea casi plana. Por eso calculamos cuánto cambia de un día a otro, y esa variación diaria es la serie que usan esos gráficos. Si las tendencias fallan, esos casos muestran el error, pero el resto de la galería sigue funcionando con normalidad.
 
 ## Código que conviene mostrar
 
@@ -221,9 +189,9 @@ if (jsonResponse != null && jsonResponse['errors'] != null && (jsonResponse['err
 }
 ```
 
-Qué decir: “Un solo POST para todas las consultas. Revisamos `errors` antes que el status porque AniList puede devolver errores GraphQL con 200 o con 400.”
+Qué comentar: un único POST para todo, y los errores de GraphQL se revisan antes que el código HTTP.
 
-**`MediaQueries.getMediaList` (fragmento)**
+**Consulta del listado (fragmento)**
 
 ```graphql
 Page(page: $page, perPage: $perPage) {
@@ -235,45 +203,19 @@ Page(page: $page, perPage: $perPage) {
 }
 ```
 
-Qué decir: “`pageInfo` es lo que nos permite paginar; `MediaFields` es el fragmento compartido con la consulta de detalle.”
+Qué comentar: `pageInfo` es lo que permite paginar, y `MediaFields` es el fragmento compartido.
 
 **`MediaModel.fromJson` (fragmento)**
 
 ```dart
 final parsedTitle = userPreferred ?? english ?? romaji ?? native ?? 'Unknown Title';
-
-int? allTimeRank(String type) {
-  final rankings = json['rankings'] as List<dynamic>? ?? const [];
-  for (final r in rankings) {
-    if (r['type'] == type && r['allTime'] == true) return r['rank'] as int?;
-  }
-  return null;
-}
 ```
 
-Qué decir: “El modelo es donde decidimos qué hacer cuando AniList no manda un campo, y donde aplanamos estructuras anidadas como `rankings`.”
-
-**`AniListRepositoryImpl._guard`**
-
-```dart
-Future<T> _guard<T>(Future<T> Function() call) async {
-  try {
-    return await call();
-  } on NetworkException catch (e) {
-    throw NetworkFailure(e.message);
-  } on ServerException catch (e) {
-    throw ServerFailure(e.message);
-  } catch (e) {
-    throw ParsingFailure(e.toString());
-  }
-}
-```
-
-Qué decir: “Aquí termina la capa de datos: hacia arriba solo salen entidades o `Failure`.”
+Qué comentar: el modelo decide qué hacer cuando AniList no manda un dato.
 
 ## Transición
 
-> Hasta aquí los datos ya salieron de AniList y llegaron como entidades del dominio. Ahora falta ver quién los guarda, cómo se enteran las pantallas de que cambiaron y cómo se convierten en algo que una librería de gráficos puede dibujar. Eso lo explica mi compañero.
+> Con esto los datos ya salieron de AniList y llegaron a la app como obras. Falta ver quién los guarda, cómo se entera la interfaz de que cambiaron y cómo se preparan para los gráficos. Eso lo explica mi compañero.
 
 ---
 
@@ -281,69 +223,64 @@ Qué decir: “Aquí termina la capa de datos: hacia arriba solo salen entidades
 
 ## Objetivo de esta parte
 
-Demostrar que entendemos cómo se maneja el estado con Provider en este proyecto, cómo se construye una sola vez el dataset común y cómo ese mismo dataset llega a las cuatro librerías y se convierte en cuatro widgets diferentes.
+Mostrar que entendemos cómo usamos Provider, por qué hay tres providers, cómo preparamos un único conjunto de datos para todos los gráficos y cómo cada librería dibuja ese mismo conjunto a su manera.
 
 ## Qué mostrar en pantalla
 
-1. `lib/presentation/state/charts_dataset_provider.dart` → método `load`.
-2. `lib/charts/graphic/data/graphic_adapters.dart` → `animeFrom` (solo la firma).
-3. `lib/charts/graphic/data/graphic_dataset.dart` → `GraphicDataset.fromAnime`, sección “Top N” y “Por año”.
-4. `lib/charts/common/master_case_gallery.dart` → `initState`, el `Consumer` y la creación de `CaseData`, luego `MasterCaseCard.build`.
-5. `lib/charts/common/case_support.dart` → clases `CaseData` y `CaseImpl`.
-6. El caso #5 “Área” en los cuatro archivos de builders (una línea de cada uno).
-7. En la app: la galería de Syncfusion, cambiando entre Anime y Manga.
+1. `main.dart`, solo el bloque de los tres providers.
+2. `charts_dataset_provider.dart`, el método `load`.
+3. `graphic_dataset.dart`, el inicio de `fromAnime`.
+4. `master_case_gallery.dart`, el `Consumer` que construye `CaseData`.
+5. El caso #5 “Área” en la app, cambiando entre las cuatro galerías.
+6. La app: el selector Anime/Manga en una galería.
 
 ## GUION HABLADO
 
-*[Pantalla: `main.dart` con los tres providers, un momento.]*
+*[Pantalla: los tres providers en `main.dart`.]*
 
-> Mi parte es el estado y cómo los datos llegan a los gráficos. En el proyecto usamos Provider para centralizar el estado de todo lo que llega de AniList, y tenemos tres providers, cada uno con una responsabilidad separada.
+> Mi parte es cómo manejamos el estado y cómo los datos llegan a los gráficos. Usamos Provider para centralizar el estado de todo lo que llega de AniList, y lo repartimos en tres providers.
 >
-> `MediaProvider` es el de las pantallas de listado y detalle: guarda los filtros, la lista paginada y la obra seleccionada. `ChartsDatasetProvider` es el de las galerías: carga una muestra fija de obras y calcula el dataset de los gráficos. Y `AniListLiveProvider` guarda el estado que cambia en vivo, que es la paginación del caso 52 y el sondeo del caso 63. Los separamos a propósito: por ejemplo, cada 30 segundos el sondeo del 63 notifica cambios, y si ese estado estuviera en `ChartsDatasetProvider`, se reconstruirían las 63 tarjetas en lugar de solo la del caso en vivo.
+> El primero se encarga del listado y del detalle: guarda los filtros, la lista y la obra seleccionada. El segundo se encarga de las galerías: carga una muestra de obras y prepara los datos de los gráficos. El tercero guarda lo que cambia en vivo, que son los casos de carga infinita y de tiempo real.
 >
-> Los tres extienden `ChangeNotifier`. El patrón es siempre el mismo: el provider modifica sus campos privados, llama a `notifyListeners`, y los widgets que están escuchando se reconstruyen con los datos nuevos.
-
-*[Pantalla: `ChartsDatasetProvider.load`.]*
-
-> Veamos el más importante para los gráficos, `ChartsDatasetProvider`, en su método `load`. Por defecto pide 4 páginas de 50 obras del tipo seleccionado, anime o manga. Las cuatro peticiones se lanzan en paralelo con `Future.wait`, y cada vez que llega una página se incrementa `_loadedPages` y se notifica; por eso la galería muestra “Cargando muestra de AniList, 2 de 4 páginas”. Cuando llegan todas, se juntan quitando duplicados por `id`, se toma la primera obra, que es la más popular, y se descargan sus trends.
+> La razón de separarlos es práctica. Cuando un provider avisa que cambió, se vuelve a dibujar todo lo que depende de él. El caso de tiempo real se actualiza cada 30 segundos, y si ese estado estuviera junto con la muestra de las galerías, cada 30 segundos se volverían a dibujar las 63 tarjetas. Separándolos, solo se actualiza la tarjeta que realmente cambió.
 >
-> También usamos un `_requestId`. Si el usuario cambia de Anime a Manga mientras todavía se está cargando, la respuesta vieja se descarta y no pisa a la nueva. Y si una recarga falla pero ya había datos, se conserva la muestra anterior y solo se informa el error. Eso está probado en `test/charts_gallery_test.dart`.
+> Los tres funcionan igual: cambian sus datos internos y luego llaman a `notifyListeners`, y los widgets que los escuchan se reconstruyen con la información nueva.
 
-*[Pantalla: la llamada a `GraphicAdapters.animeFrom` dentro de `load`, y luego `graphic_adapters.dart`.]*
+*[Pantalla: el método `load` del provider de las galerías.]*
 
-> Con la muestra lista, el provider construye el dataset. Primero pasa por `GraphicAdapters.animeFrom`. Este adaptador no conoce los nombres de campos de nuestro dominio: recibe funciones accessor. El provider le dice “el título es `m.title`”, “la popularidad es `m.popularity`, o 0 si es nula”, “el tamaño de burbuja son los episodios si es anime o los capítulos si es manga”, “el ranking es `ratedAllTimeRank`”. El resultado es una lista de `GAnime`, que es un modelo de vista pequeño con solo los campos que usan los gráficos.
+> El provider de las galerías pide cuatro páginas de 50 obras en paralelo, así que la muestra son las 200 obras más populares del tipo elegido. A medida que llegan las páginas va avisando, y por eso la galería puede mostrar el progreso de la carga. Cuando están todas, junta las obras, quita duplicados y descarga las tendencias de la más popular.
+>
+> Si el usuario cambia de anime a manga en plena carga, la respuesta anterior se ignora. Y si una recarga falla pero ya había datos, se conservan los anteriores y solo se muestra el error, en vez de dejar la pantalla vacía.
 
 *[Pantalla: `GraphicDataset.fromAnime`.]*
 
-> Después viene `GraphicDataset.fromAnime`. Aquí está la decisión principal de esta parte: una vez tenemos los datos, no hacemos que cada librería calcule todo por separado. Se calcula todo una sola vez en el provider, y cada gráfico solo lee la lista que necesita. Por ejemplo, `topByPopularity` son las 10 obras más populares; `countByYear` y `scoreByYear` agrupan por año de temporada o de inicio y se quedan con los últimos 10 años; `countByFormat` cuenta obras por formato y lo deja ordenado, que es lo que necesitan el funnel y la pirámide; `yearFormatSeries` es una serie año por formato que pasa por `alignSeries` para que todas las series tengan las mismas x, porque los gráficos apilados lo exigen.
+> Con la muestra lista viene la decisión más importante de esta parte. Una vez tenemos los datos, no hacemos que cada gráfico calcule lo suyo por separado. Primero construimos un conjunto de datos común, y luego cada implementación solo toma lo que necesita.
 >
-> Las operaciones estadísticas están en `GraphicTransformations`: media, cuantiles para el box plot, bins del histograma, acumulado, cascada, regresión lineal, y sobre la serie de trends la variación diaria, velas de 7 días, SMA, Bollinger, RSI y MACD. Ningún widget de gráfico hace estos cálculos.
-
-*[Pantalla: `master_case_gallery.dart`, `initState` y el `Consumer`.]*
-
-> Ahora, ¿cómo llega esto a la pantalla? Todas las galerías usan `MasterCaseGallery`. En su `initState`, después del primer frame, hace `context.read<ChartsDatasetProvider>()` y llama a `load` si el estado todavía es inicial. Usamos `read` porque aquí solo queremos disparar una acción, no suscribirnos.
+> Primero un adaptador convierte cada obra en un modelo pequeño con solo los campos que usan los gráficos. Después se calcula todo de una vez: el top 10 por popularidad, el top por puntuación, cuántas obras hay por año y por formato, la puntuación media por año, los cuartiles para el box plot, la regresión, y sobre la serie de tendencias, las velas semanales y los indicadores como la media móvil o el RSI.
 >
-> Para dibujar usamos `Consumer<ChartsDatasetProvider>`. Hay dos: uno en la AppBar, con el selector Anime o Manga que llama a `provider.load(type: ...)`, y otro en el cuerpo. Cuando el provider notifica, el `Consumer` se reconstruye, toma el `graphicDataset` y lo empaqueta en un `CaseData`, junto con la lista de `Media`, el tipo cargado, el título de la obra de trends y el error de trends si lo hubo. En otras partes usamos `context.watch`, por ejemplo en `MediaListScreen` o en los contenedores de los casos 52 y 63; el efecto es el mismo que el `Consumer`, el widget se reconstruye cuando el provider notifica. La regla que seguimos es: `read` para acciones, `watch` o `Consumer` para lo que se dibuja.
+> Esto tiene dos ventajas. La primera es que los 252 gráficos muestran exactamente los mismos números, así que la comparación entre librerías es justa. La segunda es que el cálculo se hace una sola vez y no dentro de cada widget. Aunque este conjunto se llama `GraphicDataset` porque nació con la librería Graphic, lo usan las cuatro.
 
-*[Pantalla: `CaseData` y `CaseImpl` en `case_support.dart`.]*
+*[Pantalla: el `Consumer` en `master_case_gallery.dart`.]*
 
-> `CaseData` es lo que recibe cada builder, y es igual para las cuatro librerías. `CaseImpl` describe una implementación: la estrategia, que puede ser nativo, variante, composición o adaptación; el origen de los datos, la API de la librería que se usa, una nota opcional y el `builder`, que es una función que recibe el `BuildContext` y el `CaseData` y devuelve un widget. La tarjeta `MasterCaseCard` muestra esos metadatos como etiquetas y luego llama a `impl.builder(context, data)` dentro de un `SizedBox` de 280 de alto.
-
-*[Pantalla: el caso #5 en los cuatro archivos de builders.]*
-
-> Para ver cómo las cuatro librerías convierten el mismo dataset, tomemos el caso 5, “Área”. Los cuatro builders leen exactamente la misma lista, `d.g.countByYear`, que son las obras por año. Lo que cambia es cómo se entrega a cada librería.
+> Para leer el estado usamos dos formas distintas según lo que se necesita. Cuando solo queremos pedir algo, por ejemplo iniciar la carga al abrir la galería o cambiar a manga, usamos `context.read`, que llama al provider sin quedarse escuchando. Cuando queremos dibujar algo que depende del estado, usamos `Consumer` o `context.watch`, que sí se suscriben y reconstruyen el widget cuando hay cambios.
 >
-> En Syncfusion se usa `AreaSeries` y se le pasa la lista directamente como `dataSource`, con dos mappers que dicen qué es x y qué es y. En Graphic se crea un `Chart` con `data: d.countByYear`, se declaran las variables x e y, y se dibuja un `AreaMark`, más un `LineMark` para el borde porque el área no tiene propiedad de borde. En FL Chart, el builder convierte las categorías a `FlSpot` y construye un `LineChart` con `belowBarData`, es decir, un área que se consigue configurando el gráfico de línea. Y en d_chart se convierte a un grupo numérico por año y se usa `DChartLineN` con `includeArea`.
+> En la galería, el `Consumer` recibe el conjunto de datos y lo empaqueta en un objeto que llamamos `CaseData`. Ese mismo objeto se entrega a las 63 tarjetas. Cada tarjeta tiene su implementación, que llamamos `CaseImpl`: dice cómo se resolvió el caso, de dónde salen los datos, qué parte de la librería se usó, y tiene la función que dibuja el gráfico, el builder.
+
+*[Pantalla: caso #5 “Área” en las cuatro galerías, una tras otra.]*
+
+> Para ver cómo cambia cada librería, tomemos el caso 5, un gráfico de área con la cantidad de obras por año. Las cuatro implementaciones reciben exactamente la misma lista. Lo que cambia es cómo cada librería entiende esos datos.
 >
-> Por eso en la tarjeta Syncfusion y Graphic aparecen como NATIVO y FL Chart y d_chart como VARIANTE: el dato es el mismo, pero la forma de llegar al gráfico depende de la API de cada librería.
+> Syncfusion tiene una serie de área propia, y basta con decirle qué valor va en cada eje. Graphic funciona de forma más declarativa: se definen las variables y se dibuja una “marca” de área sobre ellas. FL Chart no tiene un gráfico de área como tal, así que usamos su gráfico de línea y activamos el relleno debajo de la línea. Y en d_chart pasa algo parecido: es su gráfico de línea con la opción de incluir el área.
+>
+> Por eso en la tarjeta Syncfusion y Graphic aparecen como implementaciones nativas, y FL Chart y d_chart como variantes. El dato es el mismo, pero la forma de llegar al gráfico depende de lo que ofrece cada librería.
 
-*[Pantalla: la app, galería Syncfusion, cambiar Anime → Manga.]*
+*[Pantalla: la galería, cambiar de Anime a Manga.]*
 
-> Y si cambiamos a Manga, el `ChartsDatasetProvider` vuelve a cargar, recalcula el dataset y notifica. El `Consumer` crea un `CaseData` nuevo y los 63 builders se vuelven a ejecutar con los datos de manga. Mientras carga, se conservan los datos anteriores, para que los gráficos animen la transición en lugar de quedarse en blanco.
+> Y si cambiamos a manga, se repite el ciclo completo: el provider carga la nueva muestra, recalcula el conjunto de datos y avisa. El `Consumer` crea un `CaseData` nuevo y los 63 gráficos se vuelven a dibujar con los datos de manga.
 
 ## Código que conviene mostrar
 
-**`ChartsDatasetProvider.load` (fragmento)**
+**Construcción del dataset en `ChartsDatasetProvider.load` (fragmento)**
 
 ```dart
 _graphicDataset = GraphicDataset.fromAnime(
@@ -351,75 +288,48 @@ _graphicDataset = GraphicDataset.fromAnime(
     collected,
     title: (m) => m.title,
     popularity: (m) => m.popularity ?? 0,
-    format: (m) => m.format ?? 'UNKNOWN',
-    status: (m) => m.status ?? 'UNKNOWN',
     score: (m) => m.averageScore,
-    // Tamaño de burbuja (#11): episodios en anime, capítulos en manga.
-    episodes: (m) => m.type == 'MANGA' ? m.chapters : m.episodes,
     ...
   ),
   trends: GraphicAdapters.trendsFrom<MediaTrend>(trends, ...),
 );
 ```
 
-Qué decir: “Aquí las entidades del dominio se convierten en el dataset común. Es el único lugar donde se calcula; los gráficos solo leen.”
+Qué comentar: es el único lugar donde se calcula. Los gráficos solo leen.
 
-**`MasterCaseGallery` (fragmento)**
+**La galería reparte el mismo `CaseData` a todos los casos**
 
 ```dart
 body: Consumer<ChartsDatasetProvider>(
   builder: (context, provider, _) {
-    final dataset = provider.graphicDataset;
-    ...
     final data = CaseData(
-      g: dataset,
+      g: provider.graphicDataset!,
       media: provider.media,
       type: provider.loadedType,
-      trendsTitle: provider.trendsMedia?.title,
-      trendsError: provider.trendsError,
+      ...
     );
 ```
 
-Qué decir: “Cada vez que el provider notifica, se construye un `CaseData` nuevo y se reparte a los 63 builders.”
+Qué comentar: cada vez que el provider avisa, se crea un `CaseData` nuevo para las 63 tarjetas.
 
-**`CaseImpl` (fragmento de `case_support.dart`)**
-
-```dart
-typedef CaseBuilder = Widget Function(BuildContext context, CaseData data);
-
-class CaseImpl {
-  final ImplementationStrategy strategy;
-  final String origin;
-  final String api;
-  final String? note;
-  final CaseBuilder builder;
-  ...
-}
-```
-
-Qué decir: “Un caso no es solo un widget: también declara cómo está hecho y de dónde salen sus datos, y eso se muestra en la tarjeta.”
-
-**Caso #5 en las cuatro librerías (una línea de cada archivo)**
+**Caso #5 en las cuatro librerías**
 
 ```dart
-// syncfusion_case_builders.dart — NATIVO
-AreaSeries<GCategory, String>(dataSource: d.g.countByYear, xValueMapper: _x, yValueMapper: _y, ...)
-
-// graphic_line_area_charts.dart (g05Area) — NATIVO
-Chart(data: d.countByYear, variables: categoryVars(), marks: [AreaMark(...), LineMark(...)], ...)
-
-// fl_case_builders.dart — VARIANTE
-_lineChart([_line(_spots(d.g.countByYear), casePalette[2], area: true)], ...)   // LineChart + belowBarData
-
-// d_chart_case_builders.dart — VARIANTE
-_line([_yearGroup('Obras', d.g.countByYear)], area: true)                          // DChartLineN + includeArea
+// Syncfusion — NATIVO
+AreaSeries<GCategory, String>(dataSource: d.g.countByYear, ...)
+// Graphic — NATIVO
+Chart(data: d.countByYear, marks: [AreaMark(...), LineMark(...)], ...)
+// FL Chart — VARIANTE (LineChart + belowBarData)
+_line(_spots(d.g.countByYear), casePalette[2], area: true)
+// d_chart — VARIANTE (DChartLineN + includeArea)
+_line([_yearGroup('Obras', d.g.countByYear)], area: true)
 ```
 
-Qué decir: “Misma lista de entrada, cuatro APIs distintas.”
+Qué comentar: la misma lista de entrada en las cuatro.
 
 ## Transición
 
-> Ya vimos que los 63 casos de cada librería reciben el mismo `CaseData`. Ahora mi compañero va a explicar qué significa exactamente tener 252 implementaciones, por qué no todas son iguales y cómo funcionan los casos que dependen de datos en vivo.
+> Ya vimos que cada librería recibe los mismos datos y los dibuja a su manera. Ahora mi compañero va a explicar qué significa realmente tener 252 implementaciones y cómo funcionan los casos que se actualizan en vivo.
 
 ---
 
@@ -427,129 +337,76 @@ Qué decir: “Misma lista de entrada, cuatro APIs distintas.”
 
 ## Objetivo de esta parte
 
-Demostrar que entendemos qué significa 63 × 4 = 252, la diferencia entre la capacidad de una librería y cómo lo implementamos nosotros, y explicar con código real el caso #2 de principio a fin y los dos casos que hacen peticiones vivas: #52 y #63.
+Explicar con claridad qué significa 63 × 4 = 252, distinguir lo que ofrece una librería de cómo lo resolvimos nosotros, y mostrar tres casos concretos: el recorrido completo del #2, la carga infinita del #52 y el tiempo real del #63.
 
 ## Qué mostrar en pantalla
 
-1. `lib/charts/models/master_chart_registry.dart` → la entrada del caso 32.
-2. `lib/charts/common/case_support.dart` → `enum ImplementationStrategy`.
-3. En la app, galería d_chart → filtro ADAPTACIÓN → tarjeta #32 Candlestick. Después la misma tarjeta en Syncfusion.
-4. `lib/charts/d_chart/d_chart_case_builders.dart` → función `_candles`.
-5. Caso #2: la línea `2:` de cada archivo de builders y `g02Column` en `graphic_bar_charts.dart`.
-6. `lib/charts/common/live_case_hosts.dart` → `LazyLoadingHost._onScroll` y `LiveStreamingHost.initState`.
-7. `lib/presentation/state/anilist_live_provider.dart` → `loadNextPage`, `acquirePolling` y `pollNow`.
-8. En la app: la tarjeta #52 haciendo scroll horizontal y la tarjeta #63 esperando una nueva lectura.
+1. Una galería con los filtros de estrategia visibles (NATIVO, VARIANTE, COMPOSICIÓN, ADAPTACIÓN).
+2. La tarjeta #32 Candlestick en d_chart y después en Syncfusion.
+3. `d_chart_case_builders.dart`, la línea del caso 32.
+4. La tarjeta #2 en las cuatro galerías.
+5. La tarjeta #52 haciendo scroll horizontal.
+6. La tarjeta #63 recibiendo una nueva lectura.
+7. `anilist_live_provider.dart`, el método `pollNow`.
 
 ## GUION HABLADO
 
-*[Pantalla: `master_chart_registry.dart`.]*
+*[Pantalla: una galería con los filtros de estrategia.]*
 
-> Mi parte es explicar el número 252. El proyecto define 63 casos maestros en `masterChartRegistry`, desde línea simple hasta real-time streaming. Cada librería tiene un mapa con esos 63 casos, así que 63 por 4 da 252 implementaciones. En `test/case_builders_test.dart` un test comprueba que el total es 252 y además renderiza cada builder.
+> Mi parte es explicar el número 252. Definimos un catálogo de 63 casos de gráfico, desde una línea simple hasta un gráfico en tiempo real. Cada una de las cuatro librerías tiene su propia implementación de esos 63 casos, así que 63 por 4 da 252. Tenemos un test que comprueba que están los 252 y que cada uno se dibuja sin errores.
 >
-> Pero 252 implementaciones no son 252 tipos de gráfico diferentes: son 63 tipos, cada uno resuelto cuatro veces con cuatro APIs distintas. Y hay que separar dos conceptos que en el proyecto están en sitios distintos.
+> Pero 252 implementaciones no son 252 gráficos completamente diferentes. Son 63 tipos de gráfico, cada uno resuelto cuatro veces. Y para entenderlos hay que separar dos ideas.
 >
-> El primero es la CAPACIDAD. Está en `masterChartRegistry`, y para cada caso y cada librería guarda un `LibrarySupport` con la clasificación: nativo, variante, composición o no soportado. Esto responde a la pregunta “¿la librería trae esto?”.
+> La primera es la capacidad: qué ofrece la librería para ese gráfico. Puede traerlo listo, permitirlo configurando otro gráfico, obligarte a combinar piezas o directamente no tenerlo.
 >
-> El segundo es la IMPLEMENTACIÓN. Está en cada `CaseImpl`, en el campo `strategy`, y responde a “¿cómo lo dibujamos nosotros en este proyecto?”. Las estrategias están en el enum `ImplementationStrategy`. NATIVO es usar directamente el widget o la serie de la librería. VARIANTE es configurar un gráfico nativo, o prepararle los datos antes; por ejemplo, un área en FL Chart es un `LineChart` con `belowBarData`. COMPOSICIÓN es combinar la librería con widgets o estado de Flutter, por ejemplo un `RangeSlider` que filtra un gráfico, o dos gráficos superpuestos en un `Stack`. Y ADAPTACIÓN es cuando la librería no tiene el gráfico, o el dato no es del tipo que el gráfico espera, y construimos una representación equivalente. Cada adaptación lleva una nota visible en la tarjeta que lo explica.
+> La segunda es la implementación: cómo lo resolvimos nosotros. Ahí usamos cuatro estrategias. Nativo es usar el gráfico que la librería ya trae. Variante es configurar un gráfico existente para que se comporte como el que buscamos, como el área de FL Chart que explicó mi compañero. Composición es combinar la librería con elementos de Flutter, por ejemplo un control deslizante que filtra un gráfico o dos gráficos superpuestos. Y adaptación es cuando la librería no tiene el gráfico, o los datos no son del tipo que el gráfico espera, y construimos una representación equivalente. Cada adaptación tiene una nota en la tarjeta que explica qué se hizo.
 
-*[Pantalla: la app, galería d_chart, filtro ADAPTACIÓN, tarjeta #32.]*
+*[Pantalla: tarjeta #32 en d_chart.]*
 
-> El mejor ejemplo es el caso 32, Candlestick, en d_chart. En la matriz de capacidad, d_chart aparece como NO SOPORTADO, porque d_chart 3.0.0 no tiene gráfico de velas. d_chart solo tiene tres casos así: el 32, el 33 y el 34. Aun así lo implementamos, y está marcado como ADAPTACIÓN.
-
-*[Pantalla: `_candles` en `d_chart_case_builders.dart`.]*
-
-> La función `_candles` superpone dos `DChartBarO` en un `Stack`. La capa de abajo es una barra muy fina, de 2 píxeles, que va del mínimo al máximo de la semana: es la mecha. La capa de arriba es una barra de 12 píxeles, que va de la apertura al cierre: es el cuerpo. Para que una barra no empiece en cero sino en el valor mínimo usamos `measureOffset`. El color es verde si el cierre es mayor o igual que la apertura y rojo si no.
+> El mejor ejemplo es el candlestick, el caso 32. d_chart no tiene gráfico de velas, y en nuestro catálogo aparece como “no soportado”. Aun así lo implementamos. Superponemos dos gráficos de barras: uno muy fino que va del mínimo al máximo de la semana, que funciona como la mecha, y otro más grueso que va de la apertura al cierre, que es el cuerpo. La barra es verde si el valor subió y roja si bajó.
 >
-> Y hay una segunda adaptación, que afecta a las cuatro librerías: los datos. AniList no tiene precios. Lo que usamos es la variación diaria de popularidad que calculó `dailyGains` a partir de `Media.trends`, y `GraphicTransformations.ohlc` la agrupa en ventanas de 7 días: open es el primer día, high el máximo, low el mínimo y close el último día. Por eso en Syncfusion, aunque `CandleSeries` es nativo y la capacidad es NATIVO, la implementación también está marcada como ADAPTACIÓN: el widget es nativo, pero el dato es adaptado. Y la nota de la tarjeta lo dice: no representa una cotización financiera.
->
-> En total hay 118 implementaciones nativas, 80 variantes, 38 composiciones y 16 adaptaciones. Syncfusion es la que más casos nativos tiene, 54.
+> Además, hay una segunda adaptación que afecta a las cuatro librerías. AniList no tiene precios. Lo que usamos es la variación diaria de popularidad que explicó mi compañero, agrupada en semanas: el primer día es la apertura, el último es el cierre, y el máximo y el mínimo de la semana son los extremos.
 
-*[Pantalla: la línea `2:` de los cuatro archivos de builders, y `g02Column`.]*
+*[Pantalla: tarjeta #32 en Syncfusion.]*
 
-> Ahora recorramos un caso completo, el número 2, Columna Vertical: las 10 obras más populares de la muestra. La consulta `getMediaList` pide `popularity` en el fragmento `MediaFields`, ordenado por `POPULARITY_DESC`. `_performQuery` hace el POST, `MediaModel.fromJson` lee `json['popularity']` y el repositorio devuelve las obras como `Media`. `ChartsDatasetProvider` junta las 200 obras de las 4 páginas y las pasa por `GraphicAdapters.animeFrom`. `GraphicDataset.fromAnime` las ordena por popularidad y guarda las 10 primeras en `topByPopularity`. La galería mete el dataset en `CaseData` y llama al builder del caso 2.
->
-> Desde ahí, en las cuatro librerías el caso es NATIVO. En FL Chart, `toCategories` convierte los datos a `ChartDataCategory` y se dibujan con nuestro wrapper `BasicBarChart`, que por dentro es un `BarChart`. En Syncfusion es un `ColumnSeries` con los mappers de x e y. En d_chart, `_og` los convierte a un `OrdinalGroup` para `DChartBarO`. Y en Graphic, `g02Column` crea un `Chart` con un `IntervalMark` de título por popularidad y un `RectShape`. La tarjeta indica “DIRECTO: popularity de las 10 obras más populares”, porque el campo viene tal cual de AniList.
+> Por eso en Syncfusion, aunque la librería sí tiene un gráfico de velas, lo marcamos también como adaptación: el gráfico es nativo, pero el dato no. La nota lo deja claro: no es una cotización financiera. No queríamos presentar como nativo algo que en realidad está adaptado.
 
-*[Pantalla: `LazyLoadingHost` y `loadNextPage`; luego la tarjeta #52 en la app.]*
+*[Pantalla: tarjeta #2 en las cuatro galerías.]*
 
-> Los casos 52 y 63 son diferentes, porque no usan la muestra fija: hacen peticiones reales mientras la tarjeta está en pantalla. Para no repetir esa lógica cuatro veces, está en `live_case_hosts.dart`, y cada librería solo aporta la función que dibuja.
->
-> El 52 es Infinite Scrolling. `LazyLoadingHost` tiene un `ScrollController` horizontal. Al montarse, llama a `ensureLazyStarted` del `AniListLiveProvider` con el tipo cargado, que pide la primera página. Cuando el scroll llega a 40 píxeles del final, llama a `loadNextPage`, que pide a AniList `page` igual a la página actual más uno, con `perPage` 20, a través de `repository.getMediaList`. Las obras nuevas se añaden sin duplicados, se actualiza `hasNextPage` y, al notificar, el gráfico se ensancha 34 píxeles por obra. En las cuatro librerías es COMPOSICIÓN, porque combina el gráfico con scroll y estado de Flutter; incluso en Syncfusion, que tiene capacidad nativa.
+> Ahora el recorrido completo de un caso, el número 2, columna vertical, que muestra las diez obras más populares. La consulta a AniList pide la popularidad de cada obra, ordenada de mayor a menor. La respuesta se convierte en modelos, el repositorio los entrega como obras, y el provider de las galerías junta las 200 obras de la muestra. Al construir el conjunto de datos común se toman las diez más populares. La galería entrega ese conjunto al caso 2, y cada librería dibuja sus columnas. En las cuatro es nativo, porque todas tienen gráfico de barras vertical; lo único que cambia es la forma de pedírselo a cada una.
 
-*[Pantalla: `acquirePolling` y `pollNow` en `anilist_live_provider.dart`.]*
+*[Pantalla: tarjeta #52 haciendo scroll.]*
 
-> El 63 es Real-time Streaming, y aquí hay que ser claros: AniList no ofrece WebSocket ni notificaciones push, así que en este proyecto no hay WebSocket. Lo que hacemos es polling, un sondeo periódico.
+> Los casos 52 y 63 son distintos porque no usan la muestra fija: piden datos a AniList mientras la tarjeta está en pantalla. Esa lógica está en un contenedor común, y cada librería solo aporta cómo dibujar.
 >
-> Cuando la tarjeta se monta, `LiveStreamingHost` toma los `id` de las 5 obras más populares de la muestra y llama a `acquirePolling`. Eso crea un `Timer.periodic` de 30 segundos y hace una primera lectura inmediata. Cada lectura es `pollNow`: llama a `getMediaSnapshots`, la consulta ligera que explicó mi compañero, suma la popularidad de las 5 obras, la compara con la lectura anterior y calcula el delta. Guarda un `LiveSample` con la hora, el total, el delta y el valor por obra, conserva como máximo 30 lecturas y llama a `notifyListeners`. `changesDetected` cuenta en cuántas lecturas el delta fue distinto de cero.
+> El 52 es carga infinita. El gráfico empieza con una página de 20 obras. Cuando el usuario llega al final del scroll horizontal, se pide la siguiente página a AniList y el gráfico se hace más ancho. Igual que en el listado, se usa la información de página para saber cuándo parar. En las cuatro librerías lo resolvimos como composición, porque combina el gráfico con el scroll y el estado de Flutter.
+
+*[Pantalla: tarjeta #63 y después `pollNow`.]*
+
+> El 63 es tiempo real, y aquí hay que ser precisos. AniList no ofrece WebSocket ni notificaciones push, así que no usamos WebSocket. Lo que hacemos es polling: preguntar cada cierto tiempo.
 >
-> Como `LiveStreamingHost` hace `context.watch` del provider, cada notificación reconstruye la tarjeta con la lista de lecturas nueva. FL Chart y d_chart vuelven a dibujar el gráfico de línea completo. Syncfusion agrega solo los puntos nuevos con `ChartSeriesController.updateDataSource`. Y Graphic usa `changeDataStream` con un `ChangeDataEvent`, que es su mecanismo nativo para cambiar datos; por eso en Graphic este caso es NATIVO y en las otras tres es COMPOSICIÓN. Cuando la tarjeta sale de pantalla, `releasePolling` descuenta un consumidor y, si no queda ninguno, cancela el `Timer`, así que no se hacen peticiones si nadie está mirando.
+> Cuando la tarjeta aparece, se toman las cinco obras más populares y se inicia un temporizador de 30 segundos, con una primera consulta inmediata. En cada consulta se pide la popularidad actual de esas cinco obras con la consulta ligera, se suma, se compara con la lectura anterior y se calcula la diferencia. Esa lectura se guarda y el provider avisa del cambio. La tarjeta, que está escuchando, se vuelve a dibujar con el punto nuevo, y además muestra cuántas veces cambió el valor.
 >
-> Y con esto cerramos. Recorrimos el proyecto desde la petición GraphQL a AniList hasta los 252 gráficos, pasando por el repositorio, los providers y el dataset común. Gracias.
+> Cada librería lo actualiza a su manera. Graphic tiene un mecanismo propio para recibir datos nuevos, por eso ahí es nativo. Syncfusion agrega solo los puntos nuevos a la serie. FL Chart y d_chart vuelven a dibujar la línea completa. Y cuando la tarjeta sale de pantalla, el temporizador se detiene, para no hacer peticiones que nadie está viendo.
+>
+> Con esto cerramos. Gracias por su atención.
 
 ## Código que conviene mostrar
 
-**Capacidad del caso #32 (`master_chart_registry.dart`)**
+**Capacidad vs. implementación del caso #32**
 
 ```dart
-MasterChartSpec(
-  number: 32,
-  name: 'Candlestick',
-  support: {
-    ChartLibrary.flChart: LibrarySupport(ChartClassification.nativo, ChartState.funcional),
-    ChartLibrary.syncfusion: LibrarySupport(ChartClassification.nativo, ChartState.funcional),
-    ChartLibrary.dChart: LibrarySupport(ChartClassification.noSoportado, ChartState.funcional),
-    ChartLibrary.graphic: LibrarySupport(ChartClassification.nativo, ChartState.funcional),
-  },
-),
-```
+// master_chart_registry.dart — capacidad
+ChartLibrary.dChart: LibrarySupport(ChartClassification.noSoportado, ChartState.funcional),
 
-Qué decir: “Esto es capacidad. d_chart no trae velas, y lo dejamos dicho así.”
-
-**Implementación del caso #32 en d_chart y Syncfusion**
-
-```dart
-// d_chart_case_builders.dart
+// d_chart_case_builders.dart — implementación
 32: _impl(32, _a, 'Dos DChartBarO superpuestos (mecha y cuerpo) con measureOffset',
     (_, d) => withTrends(d, () => _candles(d.g.trendOhlc)), note: ohlcNote),
-
-// syncfusion_case_builders.dart
-32: _impl(32, _a, 'CandleSeries', (_, d) => withTrends(d, () => _cartesian([
-      CandleSeries<GOhlc, String>(dataSource: d.g.trendOhlc, ...),
-    ], yMin: null)), note: ohlcNote),
 ```
 
-Qué decir: “Esto es implementación. Las dos son `_a`, adaptación, pero por motivos distintos: en d_chart por la librería, en Syncfusion por el dato.”
+Qué comentar: el primero dice lo que ofrece la librería y el segundo cómo lo resolvimos. `_a` es adaptación.
 
-**`GraphicTransformations.ohlc`**
-
-```dart
-for (var start = 0; start + period <= values.length; start += period) {
-  final w = values.sublist(start, start + period);
-  out.add(GOhlc(labels[start], w.first,
-      w.fold<num>(w.first, (a, b) => a > b ? a : b),
-      w.fold<num>(w.first, (a, b) => a < b ? a : b),
-      w.last));
-}
-```
-
-Qué decir: “Velas de 7 días sobre la variación diaria de popularidad. No es un precio.”
-
-**Caso #2 en las cuatro librerías**
-
-```dart
-// fl_case_builders.dart
-2: _impl(2, _n, 'BarChart (BasicBarChart)', (_, d) => BasicBarChart(data: toCategories(_topPopularity(d)), ...)),
-// syncfusion_case_builders.dart
-2: _impl(2, _n, 'ColumnSeries', (_, d) => _cartesian([ColumnSeries<GCategory, String>(dataSource: _topPopularity(d), ...)])),
-// d_chart_case_builders.dart
-2: _impl(2, _n, 'DChartBarO (arrangeVertically: false)', (_, d) => _bars([_og('popularity', _topPopularity(d))], rotation: 45)),
-// graphic_bar_charts.dart (g02Column)
-Chart(data: d.topByPopularity, marks: [IntervalMark(position: Varset('title') * Varset('popularity'), ...)])
-```
-
-Qué decir: “El mismo `topByPopularity`, cuatro APIs, y en las cuatro el caso es nativo.”
-
-**`AniListLiveProvider.pollNow` (fragmento)**
+**Una lectura del caso #63 (`pollNow`, fragmento)**
 
 ```dart
 final snapshot = await repository.getMediaSnapshots(_pollIds);
@@ -564,28 +421,19 @@ _samples.add(LiveSample(
 ));
 ```
 
-Qué decir: “Una lectura: consultar, sumar, comparar con la anterior, guardar y notificar.”
+Qué comentar: consultar, sumar, comparar con la anterior y guardar. Después el provider avisa.
 
-**`acquirePolling` / `releasePolling`**
+**Temporizador del #63**
 
 ```dart
-_pollUsers++;
-if (_timer == null && _pollIds.isNotEmpty) {
-  _timer = Timer.periodic(pollInterval, (_) => pollNow());   // pollInterval = 30 s
-  pollNow();
-}
-...
-if (_pollUsers == 0) {
-  _timer?.cancel();
-  _timer = null;
-}
+_timer = Timer.periodic(pollInterval, (_) => pollNow());   // pollInterval = 30 s
 ```
 
-Qué decir: “El `Timer` solo existe mientras la tarjeta del 63 está visible.”
+Qué comentar: esto es polling, no WebSocket.
 
 ## Transición
 
-Es el cierre del video (ver la última frase del guion hablado). Si se quiere una despedida conjunta, cada integrante puede decir su nombre al final.
+Es el cierre del video. Si se quiere, cada integrante dice su nombre al final.
 
 ---
 
@@ -593,94 +441,92 @@ Es el cierre del video (ver la última frase del guion hablado). Si se quiere un
 
 ## 10 ideas que todos deben conocer
 
-1. Toda la comunicación con AniList pasa por `_performQuery` de `AniListRemoteDataSourceImpl`: un POST a `https://graphql.anilist.co` con `query` y `variables`.
-2. `MediaModel extends Media`: el modelo sabe leer JSON y a la vez es una entidad del dominio.
-3. El repositorio traduce excepciones (`ServerException`, `NetworkException`) a `Failure` (`ServerFailure`, `NetworkFailure`, `ParsingFailure`).
-4. Hay tres providers: `MediaProvider` (listado y detalle), `ChartsDatasetProvider` (muestra de las galerías) y `AniListLiveProvider` (#52 y #63).
-5. La muestra de las galerías son 4 páginas × 50 obras, ordenadas por `POPULARITY_DESC`, más hasta 4 páginas de `Media.trends` de la obra más popular.
-6. `GraphicDataset.fromAnime` calcula todo una vez; los builders solo leen listas. Lo usan las cuatro librerías.
-7. Cada caso es un `CaseImpl` con `strategy`, `origin`, `api`, `note` y `builder`; el builder recibe un `CaseData`.
-8. 63 casos maestros × 4 librerías = 252, verificado por `test/case_builders_test.dart`.
-9. Capacidad (en `masterChartRegistry`) y estrategia de implementación (en cada `CaseImpl`) son cosas distintas.
-10. El #63 es polling cada 30 segundos, no WebSocket; el #52 es paginación real con `pageInfo.hasNextPage`.
+1. Toda la comunicación con AniList pasa por un único método que manda un POST con la consulta GraphQL y sus variables.
+2. El modelo sabe leer JSON y a la vez es una entidad del dominio: hereda de ella.
+3. Abajo los errores son excepciones técnicas. El repositorio los convierte en fallos de la aplicación, que es lo que ven las pantallas.
+4. Hay tres providers: listado y detalle, muestra de las galerías, y datos en vivo (#52 y #63).
+5. La muestra de las galerías son las 200 obras más populares (4 páginas de 50), más las tendencias diarias de la más popular.
+6. El conjunto de datos común se calcula una sola vez y lo usan las cuatro librerías.
+7. Cada caso tiene una implementación con su estrategia, el origen de sus datos y la función que dibuja.
+8. 63 casos × 4 librerías = 252, y un test lo comprueba.
+9. Capacidad (qué ofrece la librería) e implementación (cómo lo hicimos) son dos cosas distintas.
+10. El #63 consulta cada 30 segundos: es polling, no WebSocket. El #52 pide páginas reales hasta que AniList dice que no hay más.
 
 ## 10 conceptos que no deben confundirse
 
-| No confundir… | …con | Diferencia en este proyecto |
+| No confundir… | …con | En este proyecto |
 |---|---|---|
-| Exception | Failure | Exception se lanza en `data`; Failure es lo que capturan los providers. |
-| Model | Entity | `MediaModel` tiene `fromJson`; `Media` es Dart puro sin JSON. |
-| Capacidad | Implementación | Capacidad = qué trae la librería (`ChartClassification`); implementación = cómo lo hicimos (`ImplementationStrategy`). |
-| VARIANTE | COMPOSICIÓN | Variante configura un gráfico de la librería; composición lo combina con widgets o estado de Flutter. |
-| ADAPTACIÓN | NO SOPORTADO | No soportado es una clasificación de capacidad; adaptación es cómo lo dibujamos igualmente. |
-| `context.read` | `context.watch` / `Consumer` | `read` para acciones (no se suscribe); `watch`/`Consumer` reconstruyen al notificar. |
-| `popularity` de `Media` | `popularity` de `Media.trends` | La primera es el valor actual; la segunda es una serie diaria acumulada que convertimos en variación diaria. |
-| Candlestick del proyecto | Gráfico financiero | Las velas agrupan 7 días de variación de popularidad; no hay precios. |
-| Polling | WebSocket / streaming push | Consultamos cada 30 s con un `Timer`; AniList no empuja datos. |
-| `GraphicTransformations` | `DataTransformations` | La primera alimenta el dataset de las galerías; la segunda existe y tiene tests pero no la importa ningún archivo de `lib/`. |
+| Excepción | Fallo (Failure) | La excepción nace en la capa de datos. El fallo es lo que recibe el provider. |
+| Modelo | Entidad | El modelo lee JSON. La entidad es la obra que usa el resto de la app. |
+| Capacidad | Implementación | Una dice qué trae la librería. La otra, cómo lo resolvimos. |
+| Variante | Composición | La variante configura un gráfico existente. La composición lo combina con elementos de Flutter. |
+| Adaptación | No soportado | “No soportado” describe a la librería. “Adaptación” describe nuestra solución. |
+| `read` | `watch` / `Consumer` | `read` sirve para disparar acciones. `watch` y `Consumer` sirven para dibujar y reconstruir. |
+| Popularidad actual | Popularidad de trends | La de trends es acumulada. Graficamos su variación diaria. |
+| Nuestro candlestick | Un gráfico financiero | Son semanas de variación de popularidad, no precios. |
+| Polling | WebSocket | Preguntamos cada 30 segundos. AniList no nos envía datos por su cuenta. |
+| `GraphicDataset` | Algo exclusivo de Graphic | Se llama así por su origen, pero lo usan las cuatro librerías. |
 
 ## 10 preguntas que cualquiera de los cuatro podría recibir
 
-1. **¿Por qué hay un DataSource y además un Repository?**
-   El DataSource habla HTTP y JSON; el Repository expone entidades y traduce errores a `Failure`. Los providers dependen solo del contrato `AniListRepository`.
+1. **¿Para qué sirve el repositorio si ya existe el DataSource?**
+   El DataSource habla HTTP y JSON. El repositorio entrega entidades y traduce los errores. Los providers solo conocen el contrato del repositorio.
 
-2. **¿Qué pasa si AniList responde 400 con un error de GraphQL?**
-   `_performQuery` revisa `errors` antes del status y lanza `ServerException` con el mensaje de AniList; el repositorio lo convierte en `ServerFailure`.
+2. **¿Qué pasa si AniList devuelve un error de GraphQL?**
+   Se revisa antes que el código HTTP y se usa el mensaje de AniList. Llega a la pantalla como un error del servidor.
 
 3. **¿Cómo sabe la app que no hay más páginas?**
-   Por `pageInfo.hasNextPage`. `MediaProvider.fetchMedia` y `AniListLiveProvider.loadNextPage` no piden más si es `false`.
+   AniList indica en cada respuesta si hay una página siguiente. Si no la hay, no se vuelve a pedir.
 
-4. **¿Por qué no calcula cada gráfico sus propios datos?**
-   Porque así los 252 casos muestran exactamente los mismos datos y el cálculo se hace una sola vez en `ChartsDatasetProvider` con `GraphicDataset.fromAnime`.
+4. **¿Por qué cada gráfico no calcula sus propios datos?**
+   Para que los 252 muestren los mismos números y para calcularlo una sola vez.
 
-5. **¿Por qué el dataset se llama `GraphicDataset` si lo usan las cuatro librerías?**
-   Nació en la integración de Graphic y después se reutilizó como dataset común; `CaseData` lo documenta así.
+5. **¿Por qué hay tres providers y no uno?**
+   Para que el caso en tiempo real no obligue a redibujar las 63 tarjetas cada 30 segundos.
 
-6. **¿Por qué tres providers y no uno?**
-   Para que cada notificación reconstruya solo lo necesario: el sondeo del #63 no debe reconstruir las 63 tarjetas.
+6. **¿Qué significa que el candlestick de d_chart sea una adaptación?**
+   d_chart no tiene velas. Las dibujamos superponiendo dos gráficos de barras: uno fino para la mecha y otro grueso para el cuerpo.
 
-7. **¿Qué significa que d_chart #32 sea ADAPTACIÓN?**
-   d_chart no tiene velas (capacidad NO SOPORTADO); las dibujamos superponiendo dos `DChartBarO` con `measureOffset`: una fina para la mecha y otra gruesa para el cuerpo.
+7. **¿De dónde salen las velas si AniList no tiene precios?**
+   De la variación diaria de popularidad de una obra, agrupada en semanas.
 
-8. **¿De dónde salen los datos del candlestick si AniList no tiene precios?**
-   De `Media.trends`: variación diaria de popularidad (`dailyGains`), agrupada en velas de 7 días (`ohlc`). La tarjeta lo aclara con `ohlcNote`.
+8. **¿Por qué el candlestick de Syncfusion es una adaptación si la librería lo trae?**
+   El gráfico es nativo, pero el dato está adaptado, y preferimos decirlo.
 
-9. **¿El #63 sigue consultando si salgo de la galería?**
-   No. `LiveStreamingHost.dispose` llama a `releasePolling`; cuando no queda ningún consumidor se cancela el `Timer`.
+9. **¿El caso 63 sigue consultando si salgo de la galería?**
+   No. Cuando la tarjeta desaparece, el temporizador se detiene.
 
-10. **¿Cómo comprobaron que las 252 implementaciones funcionan?**
-    `test/case_builders_test.dart` verifica las 63 claves por librería, origen y API no vacíos, total 252, y renderiza cada builder con un `FakeRepository`.
+10. **¿Cómo saben que los 252 funcionan?**
+    Hay un test que comprueba los 63 casos de cada librería y dibuja cada uno con un repositorio falso.
 
 ---
 
 # MAPA GENERAL DEL PROYECTO
 
-El diagrama sigue el código real. La única diferencia con el esquema genérico es que entre Provider y Dataset hay un paso de adaptadores (`GraphicAdapters`), y que los casos #52 y #63 salen del camino principal: piden datos a AniList a través de `AniListLiveProvider` en lugar de usar la muestra fija.
+Este mapa sigue el código real. Hay dos diferencias con un esquema genérico: entre el provider y el conjunto de datos hay un paso de adaptación, y los casos #52 y #63 no usan la muestra fija, sino que piden datos a AniList mientras están en pantalla.
 
 ```text
-AniList (https://graphql.anilist.co)
+AniList (API GraphQL)
    ↓
-HTTP POST + GraphQL  {query, variables}          MediaQueries (media_queries.dart)
+HTTP POST + consulta GraphQL
    ↓
-DataSource           AniListRemoteDataSourceImpl._performQuery
-   ↓                 JSON → MediaModel / PageInfoModel / MediaTrendModel (fromJson)
-Repository           AniListRepositoryImpl  (Exception → Failure)
+DataSource            envía la consulta y convierte el JSON en modelos
    ↓
-Domain               Media · MediaTrend · PageInfo  +  contrato AniListRepository
+Repository            entrega entidades y traduce errores
    ↓
-Provider             MediaProvider          → listado / detalle (pantallas)
-                     ChartsDatasetProvider  → muestra 4×50 + Media.trends
-                     AniListLiveProvider    → #52 paginación · #63 polling 30 s
+Domain                obras, tendencias, información de página
    ↓
-Adaptadores          GraphicAdapters.animeFrom / trendsFrom  → GAnime, GTrendPoint
+Provider              listado/detalle · muestra de galerías · datos en vivo (#52, #63)
    ↓
-Dataset              GraphicDataset.fromAnime + GraphicTransformations
+Adaptadores           obra → modelo pequeño para gráficos
    ↓
-CaseData / CaseImpl  MasterCaseGallery (Consumer) → CaseData → casesFor(library)[n]
+Dataset común         todos los cálculos, una sola vez
    ↓
-Builder              impl.builder(context, data)   (#52/#63: LazyLoadingHost / LiveStreamingHost)
+CaseData / CaseImpl   la galería reparte los datos a los 63 casos
    ↓
-Librería             FL Chart 1.2.0 · Syncfusion 34.2.9 · d_chart 3.0.0 · Graphic 2.7
+Builder               cada caso dibuja con su librería
    ↓
-UI                   MasterCaseCard (etiquetas de capacidad/estrategia + gráfico)
+Librería              FL Chart · Syncfusion · d_chart · Graphic
+   ↓
+UI                    tarjeta con estrategia, origen de datos y gráfico
 ```
